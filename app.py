@@ -297,27 +297,32 @@ with tab_coach:
 
                     REGOLE D'INGAGGIO TASSATIVE:
                     1. FATICA E TELEMETRIA: Body Battery Istantanea: {bb_attuale_energia}%.
-                    2. FEEDBACK UMANO: Livello di DOMS / dolore muscolare: {doms_level}/10. 
+                    2. FEEDBACK UMANO: Livello di DOMS: {doms_level}/10. 
                        - Se DOMS <= 3: Distruggilo. Massimizza il carico nervoso e meccanico.
-                       - Se DOMS tra 4 e 7: Modula chirurgicamente. Aggira i tessuti infiammati, mantieni l'intensità ma riduci il tonnellaggio.
-                       - Se DOMS >= 8: Imponi recupero attivo o mobilità per irrorare i tessuti. Niente carichi massimali.
+                       - Se DOMS tra 4 e 7: Modula chirurgicamente. Aggira i tessuti infiammati, riduci il volume.
+                       - Se DOMS >= 8: Imponi recupero attivo o mobilità. Niente carichi massimali.
 
-                    3. PROTOCOLLO ESECUTIVO (IL MASSACRO):
-                       - SE SALA PESI: 35-40 min ESATTI. Niente pause. Usa EMOM, AMRAP o Giant Sets. Se DOMS bassi, portalo al cedimento tecnico con superserie antagoniste. Defaticamento assente.
-                       - SE CORSA: Usa i suoi volumi estremi. Prescrivi ripetute, fartlek o tempo run con passi al secondo esatti.
-                       - SE CICLISMO: Base di Watt (%FTP) e Cadenza (RPM).
+                    3. PROTOCOLLO ESECUTIVO (SALA PESI):
+                       - RISCALDAMENTO OBBLIGATORIO: 5-7 minuti ESATTI. Includi lavoro specifico su core/addome (Plank, Hollow, ecc.) e mobilità articolare.
+                       - LAVORO CENTRALE (35-40 min): Altissima densità. Usa protocolli EMOM, AMRAP o Giant Sets. Fornisci il dettaglio chirurgico: Nomi esercizi, Serie, Reps, Recupero al secondo. Evita abbinamenti biomeccanicamente errati (mai Squat e Stacco pesante nella stessa superserie).
+                       - DEFATICAMENTO: Assente. Finito il circuito, esci dalla palestra.
 
-                    4. NUTRIZIONE PREDITTIVA (BIO-HACKING DEL RECUPERO):
-                       L'atleta deve difendere {muscoli_attuali} kg di massa magra dal catabolismo indotto dall'endurance.
-                       - Calcola il dispendio calorico preciso di questa specifica sessione.
-                       - PRE-WORKOUT: Grammi esatti di carboidrati e timing per saturare il glicogeno.
-                       - POST-WORKOUT: Grammi esatti di proteine a rapido assorbimento e carbo ad alto IG per spegnere il cortisolo e innescare la sintesi proteica istantanea.
+                    4. PROTOCOLLO ESECUTIVO (CORSA/CICLISMO):
+                       - CORSA: Volumi estremi. Ripetute, fartlek o tempo run con passi al secondo esatti.
+                       - CICLISMO: Base di Watt (%FTP) e Cadenza (RPM).
 
-                    FORMAT DI RISPOSTA (Usa il Markdown in modo aggressivo):
-                    - 📊 **[TELEMETRIA INGAGGIATA]**: Analisi rapida e spietata di Body Battery e DOMS ({doms_level}/10).
+                    5. NUTRIZIONE PREDITTIVA (BIO-HACKING DEL RECUPERO):
+                       - Calcola il dispendio calorico preciso della sessione.
+                       - PRE-WORKOUT: Grammi esatti di carbo e timing per saturare il glicogeno.
+                       - POST-WORKOUT: Grammi esatti di proteine isolate e carbo ad alto IG per spegnere il cortisolo e innescare la sintesi proteica.
+
+                    FORMAT DI RISPOSTA OBBLIGATORIO (Usa il Markdown in modo aggressivo, elenchi puntati rigorosi):
+                    - 📊 **[TELEMETRIA INGAGGIATA]**: Analisi di Body Battery e DOMS ({doms_level}/10).
                     - 🧠 **[STRATEGIA NOTORIOUS]**: La logica bio-meccanica di oggi.
-                    - ⚙️ **[PROTOCOLLO OPERATIVO]**: L'allenamento balistico.
-                    - 🥩 **[BIO-HACKING NUTRIZIONALE]**: I macro-nutrienti esatti pre e post sessione.
+                    - ⚙️ **[PROTOCOLLO OPERATIVO]**: 
+                      * **Fase 1: Riscaldamento e Core (5-7 min)**: Dettaglio esercizi e tempi.
+                      * **Fase 2: Lavoro Centrale (35-40 min)**: Dettaglio estremo del circuito (Serie, Reps, Riposi).
+                    - 🥩 **[BIO-HACKING NUTRIZIONALE]**: I macro-nutrienti esatti.
                     """
                     
                     prompt_utente = f"Microciclo: {storico_settimana}. Attività: {storico_attivita}. Body Battery: {bb_attuale_energia}%. DOMS: {doms_level}/10. Disciplina: {sport_scelto}."
@@ -376,4 +381,4 @@ with tab_inserimento:
 # FOOTER / FIRMA
 # ==========================================
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: gray; font-weight: bold; letter-spacing: 2px;'>ENGINEERED BY FRANCESCO | THE NOTORIOUS PROTOCOL</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; font-weight: bold; letter-spacing: 2px;'>ENGINEERED BY FRANCESCO PAGLIARA | THE NOTORIOUS PROTOCOL</p>", unsafe_allow_html=True)
