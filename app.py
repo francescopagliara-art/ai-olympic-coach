@@ -298,7 +298,8 @@ with tab_coach:
                     
                     3. SE HA SCELTO 'SALA PESI' (PARADIGMA DENSITÀ ESTREMA):
                        - Riscaldamento: 5-7 min.
-                       - Lavoro Centrale: 35-40 min ESATTI. Usa protocolli EMOM, AMRAP o Giant Sets per sputare sangue. Coinvolgi tutto il corpo (Total Body).
+                       - Lavoro Centrale: 35-40 min ESATTI. Usa protocolli EMOM, AMRAP o Giant Sets avanzati.
+                       - Nota di Carico: Rimuovi ogni prudenza. L'atleta ha una capacità di recupero eccezionale. Se i DOMS sono bassi, il volume deve essere brutale, strutturato con superserie antagoniste o complessi con bilanciere che portino al limite la capacità anaerobica. I target di ripetizioni devono sfiorare il cedimento tecnico.
                        - Defaticamento: Nessuno.
                     
                     4. SE HA SCELTO 'CORSA':
