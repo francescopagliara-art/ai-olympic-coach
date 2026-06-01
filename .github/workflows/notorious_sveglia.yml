@@ -1,0 +1,30 @@
+name: Notorious Morning Alarm
+
+on:
+  schedule:
+    # Gira ogni giorno alle 05:00 UTC (le 07:00 in Italia con l'ora legale)
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Ti permette di testarlo manualmente tramite pulsante
+
+jobs:
+  send_alarm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v3
+
+      - name: Configurazione Python
+        uses: actions/setup-python@v4
+        with:
+          python-size: '3.10'
+
+      - name: Installazione Dipendenze
+        run: |
+          pip install requests openai
+
+      - name: Esecuzione Bot Telegram
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: python telegram_bot.py
