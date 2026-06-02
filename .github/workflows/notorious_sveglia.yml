@@ -2,13 +2,17 @@ name: Notorious Morning Alarm
 
 on:
   schedule:
-    # Gira alle 04:00 UTC (che corrispondono alle 06:00 in Italia)
+    # Scatta alle 04:00 UTC (corrispondenti alle 06:00 del mattino in Italia)
     - cron: '0 4 * * *'
   workflow_dispatch:
 
 jobs:
   send_alarm:
     runs-on: ubuntu-latest
+    # FORZATURA STRUTTURALE: Applicata direttamente sul Job per azzerare ogni warning di Node.js
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    
     steps:
       - name: Checkout del codice
         uses: actions/checkout@v4
