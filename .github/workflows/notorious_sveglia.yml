@@ -2,21 +2,21 @@ name: Notorious Morning Alarm
 
 on:
   schedule:
-    # Gira ogni giorno alle 05:00 UTC (le 07:00 in Italia con l'ora legale)
-    - cron: '0 5 * * *'
-  workflow_dispatch: # Ti permette di testarlo manualmente tramite pulsante
+    # Gira alle 04:00 UTC (che corrispondono alle 06:00 in Italia)
+    - cron: '0 4 * * *'
+  workflow_dispatch:
 
 jobs:
   send_alarm:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout del codice
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurazione Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-size: '3.10'
+          python-version: '3.10'
 
       - name: Installazione Dipendenze
         run: |
