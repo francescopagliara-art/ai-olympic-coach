@@ -127,6 +127,10 @@ def fetch_data():
         df_completo = pd.merge(df_garmin, df_zepp, on='data', how='outer')
         df_completo['data'] = pd.to_datetime(df_completo['data'])
         df_completo = df_completo.sort_values('data')
+        
+        # FIX: FORWARD FILL. Riempie i giorni vuoti di Zepp con l'ultima misurazione valida.
+        df_completo = df_completo.ffill()
+        
         df_completo['massa_grassa_kg'] = df_completo['peso_kg'] * (df_completo['massa_grassa_perc'] / 100)
         df_completo['acqua_kg'] = df_completo['peso_kg'] * (df_completo['acqua_perc'] / 100)
         
@@ -304,7 +308,8 @@ with tab_coach:
 
                     3. PROTOCOLLO ESECUTIVO (SALA PESI):
                        - RISCALDAMENTO OBBLIGATORIO: 5-7 minuti ESATTI. Includi lavoro specifico su core/addome (Plank, Hollow, ecc.) e mobilità articolare.
-                       - LAVORO CENTRALE (35-40 min): Altissima densità. Usa protocolli EMOM, AMRAP o Giant Sets. Fornisci il dettaglio chirurgico: Nomi esercizi, Serie, Reps, Recupero al secondo. REGOLA BIOMECCANICA UNIVERSALE (STILE CROSSFIT ELITE): Massimizza l'impatto metabolico ma distribuisci il danno. Alterna rigorosamente i pattern motori nei circuiti (es. Upper/Lower, Spinta/Tirata). Il sovraccarico deve essere sistemico: evita di affaticare la stessa articolazione o catena muscolare (es. bassa schiena, cuffia dei rotatori, ginocchia) in due stazioni o minuti consecutivi.
+                       - LAVORO CENTRALE (35-40 min): Altissima densità. Usa protocolli EMOM, AMRAP o Giant Sets. Fornisci il dettaglio chirurgico: Nomi esercizi, Serie, Reps, Recupero al secondo. REGOLA BIOMECCANICA UNIVERSALE (STILE CROSSFIT ELITE): Massimizza l'impatto metabolico ma distribuisci il danno. Alterna rigorosamente i pattern motori nei circuiti. Il sovraccarico deve essere sistemico: evita di affaticare la stessa articolazione in due stazioni consecutive.
+                       - VARIABILITÀ E ADATTAMENTO NEURONALE: Applica il principio della rotazione coniugata. Cambia sempre la selezione degli esercizi e degli angoli di lavoro rispetto alle sessioni precedenti. Vietato generare lo stesso workout per due giorni consecutivi.
                        - DEFATICAMENTO: Assente. Finito il circuito, esci dalla palestra.
 
                     4. PROTOCOLLO ESECUTIVO (CORSA/CICLISMO):
@@ -331,7 +336,7 @@ with tab_coach:
                         risposta = client.chat.completions.create(
                             model="gpt-4o-mini",
                             messages=[{"role": "system", "content": prompt_di_sistema}, {"role": "user", "content": prompt_utente}],
-                            temperature=0.3
+                            temperature=0.7 # Temperatura alzata per massimizzare la creatività tecnica e sbloccare la varianza degli esercizi
                         )
                         st.success("PROTOCOLLO AGGANCIATO.")
                         st.markdown(f"### 🐺 Protocollo {sport_scelto}")
@@ -381,4 +386,4 @@ with tab_inserimento:
 # FOOTER / FIRMA
 # ==========================================
 st.markdown("---")
-st.markdown("<p style='text-align: center; color: gray; font-weight: bold; letter-spacing: 2px;'>ENGINEERED BY FRANCESCO PAGLIARA | THE NOTORIOUS PROTOCOL</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; color: gray; font-weight: bold; letter-spacing: 2px;'>ENGINEERED BY FRANCESCO | THE NOTORIOUS PROTOCOL</p>", unsafe_allow_html=True)
