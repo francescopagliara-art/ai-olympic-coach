@@ -313,8 +313,8 @@ with tab_coach:
                        - DEFATICAMENTO: Assente. Finito il circuito, esci dalla palestra.
 
                     4. PROTOCOLLO ESECUTIVO (CORSA/CICLISMO):
-                       - CORSA: Volumi estremi. Ripetute, fartlek o tempo run con passi al secondo esatti.
-                       - CICLISMO: Base di Watt (%FTP) e Cadenza (RPM).
+                       - CORSA: Applica il principio della Polarizzazione Estrema (80/20). Analizza lo storico: se l'ultima sessione è stata ad alto impatto o ad alto volume (es. lunghi sopra i 15km o ripetute), imponi una corsa di scarico e rigenerazione in Z2 (Recovery Run) vietando sforzi massimali. Se il sistema è fresco, prescrivi lavori di qualità letali (Fartlek, Ripetute VO2Max, Tempo Run) indicando passi al chilometro esatti e tempi di recupero. Mai due sessioni di qualità consecutive.
+                       - CICLISMO: Sfrutta i pedali a zero impatto articolare come arma tattica di cross-training. Analizza il microciclo e i DOMS: se l'atleta è distrutto dai volumi di corsa o dalla ghisa, imponi un "Active Recovery" obbligatorio per lavare l'acido lattico (cadenza altissima 95-100 RPM, potenza in Z1/Z2). Se il sistema è reattivo ma i tendini necessitano di tregua, prescrivi un massacro metabolico anaerobico (Intervalli VO2 Max o Sweet Spot) indicando percentuali di Potenza esatte (%FTP), target di Cadenza (RPM) e minuti di lavoro/recupero.
 
                     5. NUTRIZIONE PREDITTIVA (BIO-HACKING DEL RECUPERO):
                        - Calcola il dispendio calorico preciso della sessione.
