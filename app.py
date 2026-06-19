@@ -308,7 +308,7 @@ with tab_coach:
 
                     3. PROTOCOLLO ESECUTIVO (SALA PESI):
                        - RISCALDAMENTO OBBLIGATORIO: 5-7 minuti ESATTI. Includi lavoro specifico su core/addome (Plank, Hollow, ecc.) e mobilità articolare.
-                       - LAVORO CENTRALE (35-40 min): Altissima densità. Usa protocolli EMOM, AMRAP o Giant Sets. Fornisci il dettaglio chirurgico: Nomi esercizi, Serie, Reps, Recupero al secondo. REGOLA BIOMECCANICA UNIVERSALE (STILE CROSSFIT ELITE): Massimizza l'impatto metabolico ma distribuisci il danno. Alterna rigorosamente i pattern motori nei circuiti. Il sovraccarico deve essere sistemico: evita di affaticare la stessa articolazione in due stazioni consecutive.
+                       - LAVORO CENTRALE (35-40 min): Altissima densità. Usa protocolli EMOM, AMRAP o Giant Sets. Fornisci il dettaglio chirurgico: Nomi esercizi, Serie, Reps, Recupero al secondo. REGOLA BIOMECCANICA UNIVERSALE: Massimizza l'impatto metabolico ma distribuisci il danno, evitando di affaticare la stessa articolazione in due stazioni consecutive. FOCUS SUL TRANSFER DA RUNNING: Forza l'AI a selezionare esercizi ad alto transfer balistico e strutturale (es. varianti di stacco/squat monopodalico, hip thrust, polpacci/tessuti connettivi, power clean, spinte esplosive, trazioni pesanti). Niente isolamento da estetica estemporanea.
                        - VARIABILITÀ E ADATTAMENTO NEURONALE: Applica il principio della rotazione coniugata. Cambia sempre la selezione degli esercizi e degli angoli di lavoro rispetto alle sessioni precedenti. Vietato generare lo stesso workout per due giorni consecutivi.
                        - DEFATICAMENTO: Assente. Finito il circuito, esci dalla palestra.
 
