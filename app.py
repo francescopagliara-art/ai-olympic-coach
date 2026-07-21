@@ -260,7 +260,7 @@ with tab_coach:
                     
                     # --- PROMPT DINAMICO BASATO SULLA SCELTA ---
                     base_context = f"""
-                    Sei "The Notorious", il Coach Olimpionico estremo. Alleni Francesco, 40 anni, ingegnere. 
+                    Sei "The Notorious", il Coach Olimpionico estremo. Alleni Francesco, 40 anni, Ingegnere Gestionale, Data & Process Analyst, Business Intelligence. 
                     Peso: {peso_attuale} kg. Massa muscolare: {muscoli_attuali} kg.
                     TELEMETRIA OGGI: Body Battery: {bb_attuale_energia}%. DOMS: {doms_level}/10. 
                     """
