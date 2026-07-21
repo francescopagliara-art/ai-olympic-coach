@@ -128,7 +128,6 @@ def fetch_data():
         df_completo['data'] = pd.to_datetime(df_completo['data'])
         df_completo = df_completo.sort_values('data')
         
-        # FIX: FORWARD FILL. Riempie i giorni vuoti di Zepp con l'ultima misurazione valida.
         df_completo = df_completo.ffill()
         
         df_completo['massa_grassa_kg'] = df_completo['peso_kg'] * (df_completo['massa_grassa_perc'] / 100)
@@ -141,13 +140,13 @@ df_master, df_attivita = fetch_data()
 # ==========================================
 # 5. TITOLO E SCHEDE
 # ==========================================
-st.title("🐺 The Notorious Protocol - AI Coach")
+st.title("🐺 The Notorious Protocol - AI Coach (Olympic Mode)")
 st.markdown("---")
 
 tab_dashboard, tab_coach, tab_inserimento = st.tabs(["📊 TELEMETRIA", "🧠 AI COACH", "⚖️ DATA ENTRY"])
 
 # ==========================================
-# TAB 1: DASHBOARD (GOD MODE NATIVA)
+# TAB 1: DASHBOARD
 # ==========================================
 with tab_dashboard:
     if df_master.empty:
@@ -157,10 +156,8 @@ with tab_dashboard:
         raw = ultima_riga.get('raw_data', {})
         if isinstance(raw, str): raw = {} 
         
-        # --- METRICHE VITALI (Incluso VO2 Max) ---
         col1, col2, col3, col4 = st.columns(4)
         
-        # 1. VO2 Max
         vo2 = raw.get('vo2MaxValue', 'N/D')
         if vo2 == 'N/D':
             for _, act in df_attivita.head(5).iterrows():
@@ -170,59 +167,46 @@ with tab_dashboard:
                     break
         col1.metric("VO2 Max (Motore)", f"{vo2}")
         
-        # 2. FC Riposo
         fc = ultima_riga.get('rhr', 'N/D')
         col2.metric("FC Riposo", f"{fc} bpm")
         
-        # 3. Calorie Bruciate
         calorie = raw.get('totalKilocalories')
         col3.metric("Calorie Totali", f"{int(calorie)} kcal" if calorie else "N/D")
         
-        # 4. Stress
         stress = ultima_riga.get('stress_medio', 'N/D')
         col4.metric("Stress Medio", f"{stress} / 100")
-        
         st.markdown("---")
 
-        # --- ULTIMA ATTIVITÀ SPORTIVA ---
         st.subheader("🏅 Ultimo Ingaggio sul Campo")
         if not df_attivita.empty:
             ultima_att = df_attivita.iloc[0]
             col_a1, col_a2, col_a3, col_a4 = st.columns(4)
-            
             tipo = str(ultima_att.get('tipo_sport', 'N/D')).replace('_', ' ').title()
             col_a1.metric("Disciplina", tipo)
-            
             durata = ultima_att.get('durata_minuti')
             col_a2.metric("Durata", f"{durata} min" if not pd.isna(durata) else "N/D")
-            
             fc_m = ultima_att.get('fc_media')
             col_a3.metric("FC Media", f"{int(fc_m)} bpm" if not pd.isna(fc_m) else "N/D")
-            
             t_load = ultima_att.get('training_load')
             col_a4.metric("Training Load", str(int(t_load)) if not pd.isna(t_load) else "N/D")
         else:
             st.info("Nessuna attività registrata.")
         st.markdown("---")
 
-        # --- GRAFICI INTERATTIVI (NATIVI STREAMLIT) ---
         col_g1, col_g2 = st.columns(2)
-        
         with col_g1:
             bb_attuale_val = ultima_riga.get('body_battery_attuale')
             if pd.isna(bb_attuale_val): bb_attuale_val = ultima_riga.get('body_battery_max', 0) 
-
             fig_gauge = go.Figure(go.Indicator(
                 mode = "gauge+number", value = bb_attuale_val,
                 title = {'text': "SERBATOIO ENERGETICO (Body Battery)"},
                 gauge = {
-                    'axis': {'range': [0, 100]}, 
-                    'bar': {'color': "#3b82f6"}, # Azzurro Elettrico per massimo contrasto
+                    'axis': {'range': [0, 100]}, 'bar': {'color': "#3b82f6"},
                     'steps': [{'range': [0, 30], 'color': "#ff4b4b"}, {'range': [30, 70], 'color': "#ffa600"}, {'range': [70, 100], 'color': "#00cc96"}]
                 }
             ))
             st.plotly_chart(fig_gauge, use_container_width=True)
-
+            
             fig_scatter = px.scatter(
                 df_master, x="sonno_ore", y="rhr", size="body_battery_max", color="stress_medio",
                 title="EFFICIENZA RECUPERO (Sonno vs RHR)",
@@ -237,30 +221,20 @@ with tab_dashboard:
                 'Valori': [ultima_riga.get('muscoli_kg', 0), ultima_riga.get('massa_grassa_kg', 0), ultima_riga.get('massa_ossea_kg', 0), ultima_riga.get('grasso_viscerale', 0), ultima_riga.get('acqua_kg', 0)]
             })
             comp_data = comp_data[comp_data['Valori'] > 0]
-            fig_tree = px.treemap(
-                comp_data, path=['Componente'], values='Valori', 
-                title="STRUTTURA CORPOREA (kg)", 
-                color='Valori', color_continuous_scale='Reds'
-            )
+            fig_tree = px.treemap(comp_data, path=['Componente'], values='Valori', title="STRUTTURA CORPOREA (kg)", color='Valori', color_continuous_scale='Reds')
             st.plotly_chart(fig_tree, use_container_width=True)
 
 # ==========================================
-# TAB 2: IL COACH AI (OPENAI GPT-4o-mini)
+# TAB 2: IL COACH AI (Dinamico e Blindato)
 # ==========================================
 with tab_coach:
     st.header("🧠 GENERAZIONE PROTOCOLLO")
-    st.write("Inserisci i parametri di ingaggio. Il Coach calibrerà lo stress sul tuo reale stato fisiologico e muscolare.")
     
     col_scelta1, col_scelta2 = st.columns(2)
     with col_scelta1:
         sport_scelto = st.selectbox("🎯 Disciplina Odierna:", ["Seleziona...", "🏃 Corsa", "🏋️ Sala Pesi", "🚴 Ciclismo"])
-    
     with col_scelta2:
-        doms_level = st.slider(
-            "🔥 Livello DOMS / Affaticamento Muscolare", 
-            min_value=0, max_value=10, value=0, 
-            help="0 = Fresco e reattivo. 10 = Dolori estremi, fatico a muovermi."
-        )
+        doms_level = st.slider("🔥 Livello DOMS", min_value=0, max_value=10, value=0)
 
     st.markdown("---")
     
@@ -274,10 +248,7 @@ with tab_coach:
                     oggi = pd.Timestamp(date.today())
                     inizio_settimana = oggi - pd.Timedelta(days=oggi.dayofweek)
                     
-                    storico_settimana = df_master[df_master['data'] >= inizio_settimana].to_dict(orient="records")
                     bb_attuale_energia = df_master.iloc[-1].get('body_battery_attuale', 'N/D')
-                    
-                    # Estrazione dinamica e automatica dei dati corporei per la Nutrizione
                     peso_attuale = df_master.iloc[-1].get('peso_kg', 75.0)
                     muscoli_attuali = df_master.iloc[-1].get('muscoli_kg', 55.0)
                     
@@ -285,58 +256,106 @@ with tab_coach:
                         df_attivita['data'] = pd.to_datetime(df_attivita['data'])
                         storico_attivita = df_attivita[df_attivita['data'] >= inizio_settimana].drop(columns=['raw_data'], errors='ignore').to_dict(orient="records")
                     else:
-                        storico_attivita = "Nessuna attività registrata in questa settimana."
+                        storico_attivita = "Nessun allenamento"
                     
-                    prompt_di_sistema = f"""
-                    Sei "The Notorious", il Coach Olimpionico e Stratega della Nutrizione Sportiva più estremo e analitico al mondo. 
-                    Non alleni dilettanti. Alleni macchine. Zero pietà, esecuzione ingegneristica.
-
-                    PROFILO ATLETA:
-                    - Nome: Francesco. 40 anni, ingegnere manageriale, mente ferrea.
-                    - Struttura Corporea: {peso_attuale} kg. Massa muscolare pura: {muscoli_attuali} kg.
-                    - Motore Aerobico ELITE: 55-65 km/settimana di corsa. Resistenza inesauribile, battiti a riposo da rettile.
-                    - Obiettivo Pesi: Muscolo denso, funzionale, forza balistica pura (transfer totale sulla corsa). Zero estetica, 100% performance.
-
-                    Disciplina odierna: {sport_scelto}.
-
-                    REGOLE D'INGAGGIO TASSATIVE:
-                    1. FATICA E TELEMETRIA: Body Battery Istantanea: {bb_attuale_energia}%.
-                    2. FEEDBACK UMANO: Livello di DOMS: {doms_level}/10. 
-                       - Se DOMS <= 3: Distruggilo. Massimizza il carico nervoso e meccanico.
-                       - Se DOMS tra 4 e 7: Modula chirurgicamente. Aggira i tessuti infiammati, riduci il volume.
-                       - Se DOMS >= 8: Imponi recupero attivo o mobilità. Niente carichi massimali.
-
-                    3. PROTOCOLLO ESECUTIVO (SALA PESI):
-                       - RISCALDAMENTO OBBLIGATORIO: 5-7 minuti ESATTI. Includi lavoro specifico su core/addome (Plank, Hollow, ecc.) e mobilità articolare.
-                       - LAVORO CENTRALE (35-40 min): Altissima densità. Usa protocolli EMOM, AMRAP o Giant Sets. Fornisci il dettaglio chirurgico: Nomi esercizi, Serie, Reps, Recupero al secondo. REGOLA BIOMECCANICA UNIVERSALE: Massimizza l'impatto metabolico ma distribuisci il danno, evitando di affaticare la stessa articolazione in due stazioni consecutive. FOCUS SUL TRANSFER DA RUNNING: Forza l'AI a selezionare esercizi ad alto transfer balistico e strutturale (es. varianti di stacco/squat monopodalico, hip thrust, polpacci/tessuti connettivi, power clean, spinte esplosive, trazioni pesanti). Niente isolamento da estetica estemporanea.
-                       - VARIABILITÀ E ADATTAMENTO NEURONALE: Applica il principio della rotazione coniugata. Cambia sempre la selezione degli esercizi e degli angoli di lavoro rispetto alle sessioni precedenti. Vietato generare lo stesso workout per due giorni consecutivi.
-                       - DEFATICAMENTO: Assente. Finito il circuito, esci dalla palestra.
-
-                    4. PROTOCOLLO ESECUTIVO (CORSA/CICLISMO):
-                       - CORSA: Applica il principio della Polarizzazione Estrema (80/20). Analizza lo storico: se l'ultima sessione è stata ad alto impatto o ad alto volume (es. lunghi sopra i 15km o ripetute), imponi una corsa di scarico e rigenerazione in Z2 (Recovery Run) vietando sforzi massimali. Se il sistema è fresco, prescrivi lavori di qualità letali (Fartlek, Ripetute VO2Max, Tempo Run) indicando passi al chilometro esatti e tempi di recupero. Mai due sessioni di qualità consecutive.
-                       - CICLISMO: Sfrutta i pedali a zero impatto articolare come arma tattica di cross-training. Analizza il microciclo e i DOMS: se l'atleta è distrutto dai volumi di corsa o dalla ghisa, imponi un "Active Recovery" obbligatorio per lavare l'acido lattico (cadenza altissima 95-100 RPM, potenza in Z1/Z2). Se il sistema è reattivo ma i tendini necessitano di tregua, prescrivi un massacro metabolico anaerobico (Intervalli VO2 Max o Sweet Spot) indicando percentuali di Potenza esatte (%FTP), target di Cadenza (RPM) e minuti di lavoro/recupero.
-
-                    5. NUTRIZIONE PREDITTIVA (BIO-HACKING DEL RECUPERO):
-                       - Calcola il dispendio calorico preciso della sessione.
-                       - PRE-WORKOUT: Grammi esatti di carbo e timing per saturare il glicogeno.
-                       - POST-WORKOUT: Grammi esatti di proteine isolate e carbo ad alto IG per spegnere il cortisolo e innescare la sintesi proteica.
-
-                    FORMAT DI RISPOSTA OBBLIGATORIO (Usa il Markdown in modo aggressivo, elenchi puntati rigorosi):
-                    - 📊 **[TELEMETRIA INGAGGIATA]**: Analisi di Body Battery e DOMS ({doms_level}/10).
-                    - 🧠 **[STRATEGIA NOTORIOUS]**: La logica bio-meccanica di oggi.
-                    - ⚙️ **[PROTOCOLLO OPERATIVO]**: 
-                      * **Fase 1: Riscaldamento e Core (5-7 min)**: Dettaglio esercizi e tempi.
-                      * **Fase 2: Lavoro Centrale (35-40 min)**: Dettaglio estremo del circuito (Serie, Reps, Riposi).
-                    - 🥩 **[BIO-HACKING NUTRIZIONALE]**: I macro-nutrienti esatti.
+                    # --- PROMPT DINAMICO BASATO SULLA SCELTA ---
+                    base_context = f"""
+                    Sei "The Notorious", il Coach Olimpionico estremo. Alleni Francesco, 40 anni, ingegnere. 
+                    Peso: {peso_attuale} kg. Massa muscolare: {muscoli_attuali} kg.
+                    TELEMETRIA OGGI: Body Battery: {bb_attuale_energia}%. DOMS: {doms_level}/10. 
                     """
-                    
-                    prompt_utente = f"Microciclo: {storico_settimana}. Attività: {storico_attivita}. Body Battery: {bb_attuale_energia}%. DOMS: {doms_level}/10. Disciplina: {sport_scelto}."
+
+                    if sport_scelto == "🏃 Corsa":
+                        prompt_di_sistema = base_context + """
+                        DISCIPLINA SELEZIONATA: CORSA SULL'ASFALTO. 
+                        ATTENZIONE: NON citare, NON inserire e NON nominare nessun esercizio di sala pesi, né addominali, né core, né altro che non sia di pertinenza al running.
+                        
+                        REGOLE MATEMATICHE INVIOLABILI: 
+                        1. DISTANZA TOTALE: L'allenamento totale deve essere SEMPRE compreso in una forbice tra i 10 km e i 14 km. 
+                        Questo calcolo deve includere categoricamente: Riscaldamento + Lavoro Centrale + Defaticamento. 
+                        2. RISCALDAMENTO SPECIFICO: Solo ed esclusivamente corsa lenta, mobilità articolare o allunghi. Vietato inserire plank o crunch o altro che non sia di pertinenza al running.
+                        3. POLARIZZAZIONE 80/20: Leggi lo storico dell'atleta. Se l'ultima corsa era intensa, imponi una Z2 (Recovery Run). Se è fresco, aggancia ripetute, fartlek o tempo run.
+                        
+                        FORMAT OBBLIGATORIO:
+                        - 📊 **[TELEMETRIA INGAGGIATA]**
+                        - 🧠 **[STRATEGIA]** (Spiega la logica basata sullo storico)
+                        - ⚙️ **[PROTOCOLLO OPERATIVO]** (Fase 1 Riscaldamento, Fase 2 Lavoro Centrale, Fase 3 Defaticamento. Evidenzia la somma matematica dei km totali).
+                        - 🥩 **[BIO-HACKING NUTRIZIONALE]**
+                        """
+                        
+                    elif sport_scelto == "🏋️ Sala Pesi":
+                        prompt_di_sistema = base_context + """
+                        DISCIPLINA SELEZIONATA: SALA PESI.
+                        
+                        REGOLE INVIOLABILI:
+                        L'atleta non deve ricevere esercizi casuali. Deve eseguire ESCLUSIVAMENTE uno di questi 3 WORKOUT a ciclo continuo. Non puoi inventare esercizi.
+                        
+                        WORKOUT 1:
+                        - Riscaldamento ADDOMINALI
+                        - EMOM 4' Rematore
+                        - EMOM 4' Lat Machine
+                        - EMOM 4' Chin Up
+                        - EMOM 4' Rematore Inverso
+                        - EMOM 4' Panca Piana
+                        - EMOM 4' Apertura con Manubri
+                        - EMOM 4' Dips alle parallele
+                        - EMOM 4' Tricipiti
+                        
+                        WORKOUT 2:
+                        - Riscaldamento ADDOMINALI
+                        - EMOM 4' Military Press
+                        - EMOM 4' Alzate Laterali
+                        - EMOM 4' Alzate Frontali
+                        - EMOM 4' Tirate al Mento
+                        - EMOM 4' Deltoidi Posteriori
+                        - EMOM 4' Curl Bicipiti
+                        - EMOM 4' Curl a Martello
+                        - EMOM 4' Curl Presa Inversa
+                        
+                        WORKOUT 3:
+                        - Riscaldamento ADDOMINALI
+                        - EMOM 4' Leg Extention
+                        - EMOM 4' Leg Curl
+                        - EMOM 4' Squat
+                        - EMOM 4' Deadlift
+                        - EMOM 4' Hip Trust
+                        - EMOM 4' Affondi Alternati
+                        - EMOM 4' Calf Riser
+                        
+                        LA TUA MISSIONE:
+                        Analizza lo storico degli allenamenti della settimana. Conta quante volte l'atleta ha registrato attività di tipo "strength_training" (o affini). 
+                        Se ne ha fatte 0, assegnagli il WORKOUT 1. Se ne ha fatte 1, assegnagli il WORKOUT 2. Se ne ha fatte 2, assegnagli il WORKOUT 3. Se ne ha fatte 3 o più, riparti dal WORKOUT 1.
+                        
+                        FORMAT OBBLIGATORIO:
+                        - 📊 **[TELEMETRIA INGAGGIATA]**
+                        - 🧠 **[SUPERVISORE DI CICLO]** (Spiega all'atleta quale workout hai selezionato in base a quante volte si è allenato in palestra questa settimana).
+                        - ⚙️ **[PROTOCOLLO OPERATIVO]** (Ricopia per intero e alla lettera il WORKOUT selezionato, senza alterarlo).
+                        - 🥩 **[BIO-HACKING NUTRIZIONALE]** (Calibrato su quel preciso workout).
+                        """
+                        
+                    elif sport_scelto == "🚴 Ciclismo":
+                        prompt_di_sistema = base_context + """
+                        DISCIPLINA SELEZIONATA: CICLISMO.
+                        ATTENZIONE: NON citare, NON inserire e NON nominare nessun esercizio di sala pesi, né addominali, né core.
+                        
+                        REGOLE INVIOLABILI:
+                        1. CROSS-TRAINING: Impatto articolare zero. Il riscaldamento deve essere solo pedalata agile.
+                        2. LOGICA: Se l'atleta ha DOMS alti o ha accumulato molti km a piedi, imponi un "Active Recovery" (95-100 RPM, Z1/Z2) per lavare l'acido lattico. Se l'atleta è fresco, prescrivi intervalli VO2 Max o Sweet Spot (%FTP / Watt).
+                        
+                        FORMAT OBBLIGATORIO:
+                        - 📊 **[TELEMETRIA INGAGGIATA]**
+                        - 🧠 **[STRATEGIA]** 
+                        - ⚙️ **[PROTOCOLLO OPERATIVO]**
+                        - 🥩 **[BIO-HACKING NUTRIZIONALE]**
+                        """
+
+                    prompt_utente = f"Microciclo della settimana: {storico_attivita}."
                     
                     try:
                         risposta = client.chat.completions.create(
                             model="gpt-4o-mini",
                             messages=[{"role": "system", "content": prompt_di_sistema}, {"role": "user", "content": prompt_utente}],
-                            temperature=0.7 # Temperatura alzata per massimizzare la creatività tecnica e sbloccare la varianza degli esercizi
+                            temperature=0.7
                         )
                         st.success("PROTOCOLLO AGGANCIATO.")
                         st.markdown(f"### 🐺 Protocollo {sport_scelto}")
