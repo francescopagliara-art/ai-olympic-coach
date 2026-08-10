@@ -156,16 +156,11 @@ with tab_dashboard:
         raw = ultima_riga.get('raw_data', {})
         if isinstance(raw, str): raw = {} 
         
+        # --- 1. METRICHE VITALI (Sostituito VO2 Max con Passi Odierni) ---
         col1, col2, col3, col4 = st.columns(4)
         
-        vo2 = raw.get('vo2MaxValue', 'N/D')
-        if vo2 == 'N/D':
-            for _, act in df_attivita.head(5).iterrows():
-                act_raw = act.get('raw_data', {})
-                if isinstance(act_raw, dict) and act_raw.get('vO2MaxValue'):
-                    vo2 = act_raw.get('vO2MaxValue')
-                    break
-        col1.metric("VO2 Max (Motore)", f"{vo2}")
+        passi = ultima_riga.get('passi', 0)
+        col1.metric("Passi Odierni", f"{int(passi)}" if not pd.isna(passi) else "0")
         
         fc = ultima_riga.get('rhr', 'N/D')
         col2.metric("FC Riposo", f"{fc} bpm")
@@ -177,24 +172,33 @@ with tab_dashboard:
         col4.metric("Stress Medio", f"{stress} / 100")
         st.markdown("---")
 
+        # --- 2. ULTIMO INTAGGIO SUL CAMPO (Sostituito T. Load con Impatto Aerobico) ---
         st.subheader("🏅 Ultimo Ingaggio sul Campo")
         if not df_attivita.empty:
             ultima_att = df_attivita.iloc[0]
             col_a1, col_a2, col_a3, col_a4 = st.columns(4)
+            
+            # Formattiamo il nome dello sport in modo pulito
             tipo = str(ultima_att.get('tipo_sport', 'N/D')).replace('_', ' ').title()
             col_a1.metric("Disciplina", tipo)
+            
             durata = ultima_att.get('durata_minuti')
             col_a2.metric("Durata", f"{durata} min" if not pd.isna(durata) else "N/D")
+            
             fc_m = ultima_att.get('fc_media')
             col_a3.metric("FC Media", f"{int(fc_m)} bpm" if not pd.isna(fc_m) else "N/D")
-            t_load = ultima_att.get('training_load')
-            col_a4.metric("Training Load", str(int(t_load)) if not pd.isna(t_load) else "N/D")
+            
+            te_aerobico = ultima_att.get('training_effect_aerobico')
+            col_a4.metric("Impatto Aerobico", f"{te_aerobico} TE" if not pd.isna(te_aerobico) else "N/D")
         else:
             st.info("Nessuna attività registrata.")
         st.markdown("---")
 
-        col_g1, col_g2 = st.columns(2)
-        with col_g1:
+        # --- 3. I 4 GRAFICI GOD MODE (Layout a 2x2) ---
+        col_top1, col_top2 = st.columns(2)
+        
+        with col_top1:
+            # Grafico 1: Body Battery (Gauge)
             bb_attuale_val = ultima_riga.get('body_battery_attuale')
             if pd.isna(bb_attuale_val): bb_attuale_val = ultima_riga.get('body_battery_max', 0) 
             fig_gauge = go.Figure(go.Indicator(
@@ -206,7 +210,21 @@ with tab_dashboard:
                 }
             ))
             st.plotly_chart(fig_gauge, use_container_width=True)
-            
+
+        with col_top2:
+            # Grafico 2: Struttura Corporea (Treemap)
+            comp_data = pd.DataFrame({
+                'Componente': ['Massa Muscolare', 'Massa Grassa', 'Massa Ossea', 'Grasso Viscerale (Indice)', 'Acqua Corporea'],
+                'Valori': [ultima_riga.get('muscoli_kg', 0), ultima_riga.get('massa_grassa_kg', 0), ultima_riga.get('massa_ossea_kg', 0), ultima_riga.get('grasso_viscerale', 0), ultima_riga.get('acqua_kg', 0)]
+            })
+            comp_data = comp_data[comp_data['Valori'] > 0]
+            fig_tree = px.treemap(comp_data, path=['Componente'], values='Valori', title="STRUTTURA CORPOREA (kg)", color='Valori', color_continuous_scale='Reds')
+            st.plotly_chart(fig_tree, use_container_width=True)
+
+        col_bot1, col_bot2 = st.columns(2)
+
+        with col_bot1:
+            # Grafico 3: Efficienza Recupero (Scatter)
             fig_scatter = px.scatter(
                 df_master, x="sonno_ore", y="rhr", size="body_battery_max", color="stress_medio",
                 title="EFFICIENZA RECUPERO (Sonno vs RHR)",
@@ -215,14 +233,29 @@ with tab_dashboard:
             )
             st.plotly_chart(fig_scatter, use_container_width=True)
 
-        with col_g2:
-            comp_data = pd.DataFrame({
-                'Componente': ['Massa Muscolare', 'Massa Grassa', 'Massa Ossea', 'Grasso Viscerale (Indice)', 'Acqua Corporea'],
-                'Valori': [ultima_riga.get('muscoli_kg', 0), ultima_riga.get('massa_grassa_kg', 0), ultima_riga.get('massa_ossea_kg', 0), ultima_riga.get('grasso_viscerale', 0), ultima_riga.get('acqua_kg', 0)]
-            })
-            comp_data = comp_data[comp_data['Valori'] > 0]
-            fig_tree = px.treemap(comp_data, path=['Componente'], values='Valori', title="STRUTTURA CORPOREA (kg)", color='Valori', color_continuous_scale='Reds')
-            st.plotly_chart(fig_tree, use_container_width=True)
+        with col_bot2:
+            # Grafico 4: Il Nuovo Grafico "Volume di Fuoco" (Barre)
+            if not df_attivita.empty:
+                # Prendiamo solo le ultime 7 attività per mantenere il grafico pulito
+                df_grafico_att = df_attivita.head(7).copy()
+                # Rimuoviamo l'orario dalla data per pulizia visiva sull'asse x
+                df_grafico_att['data'] = df_grafico_att['data'].dt.strftime('%d/%m')
+                
+                # Se non c'è il titolo estratto (vecchi dati), mettiamo "Generico"
+                if 'titolo_allenamento' not in df_grafico_att.columns:
+                    df_grafico_att['titolo_allenamento'] = 'Generico'
+
+                fig_bar = px.bar(
+                    df_grafico_att, x="data", y="durata_minuti", color="tipo_sport",
+                    text="titolo_allenamento",
+                    title="VOLUME DI FUOCO (Ultime 7 Attività)",
+                    labels={"durata_minuti": "Durata (min)", "data": "Data", "tipo_sport": "Disciplina"},
+                    color_discrete_sequence=px.colors.qualitative.Set1
+                )
+                fig_bar.update_traces(textposition='inside', textfont_size=10)
+                st.plotly_chart(fig_bar, use_container_width=True)
+            else:
+                st.info("Nessuna attività sufficiente per generare il grafico del volume.")
 
 # ==========================================
 # TAB 2: IL COACH AI (Dinamico e Blindato)
