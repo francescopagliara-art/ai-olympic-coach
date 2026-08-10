@@ -159,9 +159,10 @@ with tab_dashboard:
         # --- 1. METRICHE VITALI CON SPIEGAZIONI (Tooltips) ---
         col1, col2, col3, col4 = st.columns(4)
         
-        passi = ultima_riga.get('passi')
-        passi_val = int(passi) if pd.notna(passi) else 0
-        col1.metric("Passi Odierni", f"{passi_val}", help="Passi totali odierni. Se vedi 0 o un numero non aggiornato, apri l'app Garmin Connect sul telefono per inviare i dati dell'orologio ai server, poi clicca di nuovo 'Sincronizza Garmin' qui.")
+        # SOSTITUZIONE KPI PASSI CON ORE DI SONNO
+        sonno = ultima_riga.get('sonno_ore')
+        sonno_val = round(sonno, 1) if pd.notna(sonno) else "N/D"
+        col1.metric("Ore di Sonno", f"{sonno_val} h", help="Ore totali di sonno registrate l'ultima notte. Fondamentale per il calcolo del recupero e la Body Battery.")
         
         fc = ultima_riga.get('rhr')
         fc_val = int(fc) if pd.notna(fc) else "N/D"
