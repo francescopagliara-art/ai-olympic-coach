@@ -254,6 +254,16 @@ with tab_coach:
                     
                     if not df_attivita.empty:
                         df_attivita['data'] = pd.to_datetime(df_attivita['data'])
+                        
+                        # HACK DI SISTEMA: Estrazione chirurgica del Titolo dell'attività dai dati grezzi Garmin
+                        def estrai_nome_garmin(raw):
+                            if isinstance(raw, dict):
+                                return raw.get('activityName', 'Generico')
+                            return 'Generico'
+                            
+                        df_attivita['titolo_allenamento'] = df_attivita['raw_data'].apply(estrai_nome_garmin)
+                        
+                        # Creiamo lo storico passando anche il titolo che l'utente ha scritto sull'app Garmin
                         storico_attivita = df_attivita[df_attivita['data'] >= inizio_settimana].drop(columns=['raw_data'], errors='ignore').to_dict(orient="records")
                     else:
                         storico_attivita = "Nessun allenamento"
@@ -285,52 +295,34 @@ with tab_coach:
                         
                     elif sport_scelto == "🏋️ Sala Pesi":
                         prompt_di_sistema = base_context + """
-                        DISCIPLINA SELEZIONATA: SALA PESI.
+                        DISCIPLINA SELEZIONATA: SALA PESI (OLYMPIC HYBRID MODE).
+                        OBIETTIVO: Fisico ibrido definitivo (centometrista/lottatore). Forza esplosiva, ipertrofia densa e condizionamento letale.
                         
-                        REGOLE INVIOLABILI:
-                        L'atleta non deve ricevere esercizi casuali. Deve eseguire ESCLUSIVAMENTE uno di questi 3 WORKOUT a ciclo continuo. Non puoi inventare esercizi.
+                        REGOLE STRUTTURALI INVIOLABILI:
+                        1. MAX 60 MINUTI: L'intero allenamento deve rientrare in 60 minuti netti per evitare picchi di cortisolo.
+                        2. LETTURA DELLO STORICO (LA ROTAZIONE DEI 3 PILASTRI): Analizza l'elenco degli allenamenti. Cerca i titoli delle attività Garmin (es. "Upper", "Lower", "Metabolic" e i relativi carichi usati). Devi prescrivere l'allenamento MANCANTE per completare il ciclo settimanale, scegliendo ESCLUSIVAMENTE tra queste 3 tipologie:
                         
-                        WORKOUT 1:
-                        - Riscaldamento ADDOMINALI
-                        - EMOM 4' Rematore
-                        - EMOM 4' Lat Machine
-                        - EMOM 4' Chin Up
-                        - EMOM 4' Rematore Inverso
-                        - EMOM 4' Panca Piana
-                        - EMOM 4' Apertura con Manubri
-                        - EMOM 4' Dips alle parallele
-                        - EMOM 4' Tricipiti
-                        
-                        WORKOUT 2:
-                        - Riscaldamento ADDOMINALI
-                        - EMOM 4' Military Press
-                        - EMOM 4' Alzate Laterali
-                        - EMOM 4' Alzate Frontali
-                        - EMOM 4' Tirate al Mento
-                        - EMOM 4' Deltoidi Posteriori
-                        - EMOM 4' Curl Bicipiti
-                        - EMOM 4' Curl a Martello
-                        - EMOM 4' Curl Presa Inversa
-                        
-                        WORKOUT 3:
-                        - Riscaldamento ADDOMINALI
-                        - EMOM 4' Leg Extention
-                        - EMOM 4' Leg Curl
-                        - EMOM 4' Squat
-                        - EMOM 4' Deadlift
-                        - EMOM 4' Hip Trust
-                        - EMOM 4' Affondi Alternati
-                        - EMOM 4' Calf Riser
-                        
-                        LA TUA MISSIONE:
-                        Analizza lo storico degli allenamenti della settimana. Conta quante volte l'atleta ha registrato attività di tipo "strength_training" (o affini). 
-                        Se ne ha fatte 0, assegnagli il WORKOUT 1. Se ne ha fatte 1, assegnagli il WORKOUT 2. Se ne ha fatte 2, assegnagli il WORKOUT 3. Se ne ha fatte 3 o più, riparti dal WORKOUT 1.
+                           - TIPO A: UPPER BODY ESPLOSIVO (Forza e Carrozzeria)
+                             Fase 1: Potenza Neurale (es. Plyo push-ups, Lanci esplosivi).
+                             Fase 2: Forza Pesante (es. Panca piana, Trazioni zavorrate, Rematore pesante, Military Press). 4-6 reps, recuperi ampi (90-120s). Usa i carichi precedenti dell'atleta per dettare la progressione.
+                             Fase 3: Ipertrofia/Estetica (Bicipiti, Tricipiti, Deltoidi). Alta densità, recuperi brevi.
+                             
+                           - TIPO B: LOWER BODY E CORE D'ACCIAIO (Armatura e Prevenzione Infortuni)
+                             Fase 1: Potenza (es. Box Jump, Kettlebell Swing, Power Clean).
+                             Fase 2: Forza Pesante (es. Squat, Stacco Rumeno, Leg Press). 5-8 reps, focus sull'eccentrica.
+                             Fase 3: Core Anti-Rotazionale (es. Plank zavorrato, Pallof Press, addome alla sbarra).
+                             
+                           - TIPO C: METABOLIC GOD MODE (Condizionamento ibrido stile Hyrox/CrossFit)
+                             Il massacro: Circuito EMOM, AMRAP o For Time da 35-40 minuti usando manubri, corpo libero e kettlebell. 
+                             Esercizi ad altissimo impatto: Affondi camminati, Burpees, Thruster con manubri, Rematore esplosivo, Step-up. Altissima intensità cardiovascolare.
+                             
+                        3. SELEZIONE INTELLIGENTE: Se l'atleta ha corso volumi estremi nelle ultime 24 ore, EVITA TASSATIVAMENTE il Tipo B e il Tipo C. Assegnagli il Tipo A (Upper Body) per salvare le gambe e il sistema cardiovascolare.
                         
                         FORMAT OBBLIGATORIO:
                         - 📊 **[TELEMETRIA INGAGGIATA]**
-                        - 🧠 **[SUPERVISORE DI CICLO]** (Spiega all'atleta quale workout hai selezionato in base a quante volte si è allenato in palestra questa settimana).
-                        - ⚙️ **[PROTOCOLLO OPERATIVO]** (Ricopia per intero e alla lettera il WORKOUT selezionato, senza alterarlo).
-                        - 🥩 **[BIO-HACKING NUTRIZIONALE]** (Calibrato su quel preciso workout).
+                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Indica chiaramente se hai scelto Upper, Lower o Metabolic e motiva la scelta analizzando lo storico e i km di corsa).
+                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Dettaglio chirurgico: Esercizi, Serie, Reps, Recupero in secondi, carico consigliato in base allo storico).
+                        - 🥩 **[BIO-HACKING NUTRIZIONALE]**
                         """
                         
                     elif sport_scelto == "🚴 Ciclismo":
