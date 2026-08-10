@@ -156,49 +156,51 @@ with tab_dashboard:
         raw = ultima_riga.get('raw_data', {})
         if isinstance(raw, str): raw = {} 
         
-        # --- 1. METRICHE VITALI (Sostituito VO2 Max con Passi Odierni) ---
+        # --- 1. METRICHE VITALI CON SPIEGAZIONI (Tooltips) ---
         col1, col2, col3, col4 = st.columns(4)
         
-        passi = ultima_riga.get('passi', 0)
-        col1.metric("Passi Odierni", f"{int(passi)}" if not pd.isna(passi) else "0")
+        passi = ultima_riga.get('passi')
+        passi_val = int(passi) if pd.notna(passi) else 0
+        col1.metric("Passi Odierni", f"{passi_val}", help="Passi totali odierni. Se vedi 0 o un numero non aggiornato, apri l'app Garmin Connect sul telefono per inviare i dati dell'orologio ai server, poi clicca di nuovo 'Sincronizza Garmin' qui.")
         
-        fc = ultima_riga.get('rhr', 'N/D')
-        col2.metric("FC Riposo", f"{fc} bpm")
+        fc = ultima_riga.get('rhr')
+        fc_val = int(fc) if pd.notna(fc) else "N/D"
+        col2.metric("FC Riposo", f"{fc_val} bpm", help="Resting Heart Rate (RHR). I battiti medi a riposo. Più sono bassi, più il tuo motore aerobico è efficiente e il cuore pompa sangue senza sforzo.")
         
         calorie = raw.get('totalKilocalories')
-        col3.metric("Calorie Totali", f"{int(calorie)} kcal" if calorie else "N/D")
+        cal_val = int(calorie) if pd.notna(calorie) else "N/D"
+        col3.metric("Calorie Totali", f"{cal_val} kcal", help="Stima delle calorie totali (basali + attive) bruciate finora nella giornata odierna.")
         
-        stress = ultima_riga.get('stress_medio', 'N/D')
-        col4.metric("Stress Medio", f"{stress} / 100")
+        stress = ultima_riga.get('stress_medio')
+        stress_val = int(stress) if pd.notna(stress) else "N/D"
+        col4.metric("Stress Medio", f"{stress_val} / 100", help="Heart Rate Variability (HRV). Misura la tensione del sistema nervoso. 0-25: Riposo. 26-50: Basso. 51-75: Medio. 76-100: Alto (Sovrallenamento).")
         st.markdown("---")
 
-        # --- 2. ULTIMO INTAGGIO SUL CAMPO (Sostituito T. Load con Impatto Aerobico) ---
+        # --- 2. ULTIMO INTAGGIO SUL CAMPO CON SPIEGAZIONI ---
         st.subheader("🏅 Ultimo Ingaggio sul Campo")
         if not df_attivita.empty:
             ultima_att = df_attivita.iloc[0]
             col_a1, col_a2, col_a3, col_a4 = st.columns(4)
             
-            # Formattiamo il nome dello sport in modo pulito
             tipo = str(ultima_att.get('tipo_sport', 'N/D')).replace('_', ' ').title()
-            col_a1.metric("Disciplina", tipo)
+            col_a1.metric("Disciplina", tipo, help="L'ultima attività sportiva registrata.")
             
             durata = ultima_att.get('durata_minuti')
-            col_a2.metric("Durata", f"{durata} min" if not pd.isna(durata) else "N/D")
+            col_a2.metric("Durata", f"{durata} min" if pd.notna(durata) else "N/D", help="Tempo totale sotto tensione dell'ultimo allenamento.")
             
             fc_m = ultima_att.get('fc_media')
-            col_a3.metric("FC Media", f"{int(fc_m)} bpm" if not pd.isna(fc_m) else "N/D")
+            col_a3.metric("FC Media", f"{int(fc_m)} bpm" if pd.notna(fc_m) else "N/D", help="Frequenza cardiaca media sostenuta durante tutta la sessione.")
             
             te_aerobico = ultima_att.get('training_effect_aerobico')
-            col_a4.metric("Impatto Aerobico", f"{te_aerobico} TE" if not pd.isna(te_aerobico) else "N/D")
+            col_a4.metric("Impatto Aerobico", f"{te_aerobico} TE" if pd.notna(te_aerobico) else "N/D", help="Training Effect (TE). Misura l'impatto sulla tua resistenza aerobica. 1.0-1.9: Recupero. 2.0-2.9: Mantenimento. 3.0-3.9: Miglioramento. 4.0-4.9: Netto miglioramento. 5.0: Sovraccarico (Overreaching).")
         else:
             st.info("Nessuna attività registrata.")
         st.markdown("---")
 
-        # --- 3. I 4 GRAFICI GOD MODE (Layout a 2x2) ---
+        # --- 3. I 4 GRAFICI GOD MODE (Bug Risolto) ---
         col_top1, col_top2 = st.columns(2)
         
         with col_top1:
-            # Grafico 1: Body Battery (Gauge)
             bb_attuale_val = ultima_riga.get('body_battery_attuale')
             if pd.isna(bb_attuale_val): bb_attuale_val = ultima_riga.get('body_battery_max', 0) 
             fig_gauge = go.Figure(go.Indicator(
@@ -212,7 +214,6 @@ with tab_dashboard:
             st.plotly_chart(fig_gauge, use_container_width=True)
 
         with col_top2:
-            # Grafico 2: Struttura Corporea (Treemap)
             comp_data = pd.DataFrame({
                 'Componente': ['Massa Muscolare', 'Massa Grassa', 'Massa Ossea', 'Grasso Viscerale (Indice)', 'Acqua Corporea'],
                 'Valori': [ultima_riga.get('muscoli_kg', 0), ultima_riga.get('massa_grassa_kg', 0), ultima_riga.get('massa_ossea_kg', 0), ultima_riga.get('grasso_viscerale', 0), ultima_riga.get('acqua_kg', 0)]
@@ -224,7 +225,6 @@ with tab_dashboard:
         col_bot1, col_bot2 = st.columns(2)
 
         with col_bot1:
-            # Grafico 3: Efficienza Recupero (Scatter)
             fig_scatter = px.scatter(
                 df_master, x="sonno_ore", y="rhr", size="body_battery_max", color="stress_medio",
                 title="EFFICIENZA RECUPERO (Sonno vs RHR)",
@@ -234,14 +234,12 @@ with tab_dashboard:
             st.plotly_chart(fig_scatter, use_container_width=True)
 
         with col_bot2:
-            # Grafico 4: Il Nuovo Grafico "Volume di Fuoco" (Barre)
             if not df_attivita.empty:
-                # Prendiamo solo le ultime 7 attività per mantenere il grafico pulito
                 df_grafico_att = df_attivita.head(7).copy()
-                # Rimuoviamo l'orario dalla data per pulizia visiva sull'asse x
-                df_grafico_att['data'] = df_grafico_att['data'].dt.strftime('%d/%m')
                 
-                # Se non c'è il titolo estratto (vecchi dati), mettiamo "Generico"
+                # BUGFIX: Forza la conversione in Datetime di Pandas prima del formattare la stringa
+                df_grafico_att['data'] = pd.to_datetime(df_grafico_att['data']).dt.strftime('%d/%m')
+                
                 if 'titolo_allenamento' not in df_grafico_att.columns:
                     df_grafico_att['titolo_allenamento'] = 'Generico'
 
