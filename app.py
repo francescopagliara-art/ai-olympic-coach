@@ -64,7 +64,8 @@ def sincronizza_garmin_completo():
         requests.post(f"{supabase_url}/rest/v1/metrica_giornaliera", headers=headers_upsert, json=payload_giornaliero).raise_for_status()
 
         # --- B. Estrazione Ultime Attività Sportive ---
-        headers_insert = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json"}
+        # BUGFIX: Aggiunto Prefer: resolution=merge-duplicates per permettere di aggiornare i nomi rinominati su Garmin!
+        headers_insert = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"}
         activities = garmin.get_activities(0, 5) 
         for act in activities:
             act_date = act.get('startTimeLocal', '').split(' ')[0]
@@ -85,11 +86,11 @@ def sincronizza_garmin_completo():
             if t_load: payload_act["training_load"] = float(t_load)
             
             try:
+                # Ora se l'ID esiste già, sovrascrive i dati, aggiornando il titolo se lo hai cambiato!
                 res = requests.post(f"{supabase_url}/rest/v1/attivita_sportive", headers=headers_insert, json=payload_act)
                 res.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                if res.status_code in [409, 400]:
-                    continue
+                pass # Ignoriamo silenziosamente altri errori minori per non bloccare il loop
         return True
     except Exception as e:
         st.error(f"Errore critico Garmin: {e}")
@@ -159,7 +160,6 @@ with tab_dashboard:
         # --- 1. METRICHE VITALI CON SPIEGAZIONI (Tooltips) ---
         col1, col2, col3, col4 = st.columns(4)
         
-        # SOSTITUZIONE KPI PASSI CON ORE DI SONNO
         sonno = ultima_riga.get('sonno_ore')
         sonno_val = round(sonno, 1) if pd.notna(sonno) else "N/D"
         col1.metric("Ore di Sonno", f"{sonno_val} h", help="Ore totali di sonno registrate l'ultima notte. Fondamentale per il calcolo del recupero e la Body Battery.")
@@ -313,7 +313,7 @@ with tab_coach:
                         ATTENZIONE: NON citare, NON inserire e NON nominare nessun esercizio di sala pesi, né addominali, né core, né altro che non sia di pertinenza al running.
                         
                         REGOLE MATEMATICHE INVIOLABILI: 
-                        1. DISTANZA TOTALE: L'allenamento totale deve essere SEMPRE compreso in una forbice tra i 10 km e i 14 km. 
+                        1. DISTANZA TOTALE: L'allenamento totale deve essere SEMPRE compreso in una forbice tra i 12 km e i 14 km. 
                         Questo calcolo deve includere categoricamente: Riscaldamento + Lavoro Centrale + Defaticamento. 
                         2. RISCALDAMENTO SPECIFICO: Solo ed esclusivamente corsa lenta, mobilità articolare o allunghi. Vietato inserire plank o crunch o altro che non sia di pertinenza al running.
                         3. POLARIZZAZIONE 80/20: Leggi lo storico dell'atleta. Se l'ultima corsa era intensa, imponi una Z2 (Recovery Run). Se è fresco, aggancia ripetute, fartlek o tempo run.
@@ -331,29 +331,21 @@ with tab_coach:
                         OBIETTIVO: Fisico ibrido definitivo (centometrista/lottatore). Forza esplosiva, ipertrofia densa e condizionamento letale.
                         
                         REGOLE STRUTTURALI INVIOLABILI:
-                        1. MAX 60 MINUTI: L'intero allenamento deve rientrare in 60 minuti netti per evitare picchi di cortisolo.
-                        2. LETTURA DELLO STORICO (LA ROTAZIONE DEI 3 PILASTRI): Analizza l'elenco degli allenamenti. Cerca i titoli delle attività Garmin (es. "Upper", "Lower", "Metabolic" e i relativi carichi usati). Devi prescrivere l'allenamento MANCANTE per completare il ciclo settimanale, scegliendo ESCLUSIVAMENTE tra queste 3 tipologie:
+                        1. MAX 60 MINUTI: L'intero allenamento deve rientrare in 60 minuti netti.
+                        2. ZERO COPIA-INCOLLA: Gli esercizi forniti nei Tipo A/B/C sono solo ESEMPI. Non ripeterli a pappagallo. Scegli eserciziBiomeccanicamente validi e cambiali sempre rispetto alle sessioni precedenti.
+                        3. LA ROTAZIONE DEI 3 PILASTRI: Analizza i titoli delle attività Garmin per capire cosa ha già fatto l'atleta. Prescrivi l'allenamento MANCANTE (A, B, o C):
                         
-                           - TIPO A: UPPER BODY ESPLOSIVO (Forza e Carrozzeria)
-                             Fase 1: Potenza Neurale (es. Plyo push-ups, Lanci esplosivi).
-                             Fase 2: Forza Pesante (es. Panca piana, Trazioni zavorrate, Rematore pesante, Military Press). 4-6 reps, recuperi ampi (90-120s). Usa i carichi precedenti dell'atleta per dettare la progressione.
-                             Fase 3: Ipertrofia/Estetica (Bicipiti, Tricipiti, Deltoidi). Alta densità, recuperi brevi.
-                             
-                           - TIPO B: LOWER BODY E CORE D'ACCIAIO (Armatura e Prevenzione Infortuni)
-                             Fase 1: Potenza (es. Box Jump, Kettlebell Swing, Power Clean).
-                             Fase 2: Forza Pesante (es. Squat, Stacco Rumeno, Leg Press). 5-8 reps, focus sull'eccentrica.
-                             Fase 3: Core Anti-Rotazionale (es. Plank zavorrato, Pallof Press, addome alla sbarra).
-                             
-                           - TIPO C: METABOLIC GOD MODE (Condizionamento ibrido stile Hyrox/CrossFit)
-                             Il massacro: Circuito EMOM, AMRAP o For Time da 35-40 minuti usando manubri, corpo libero e kettlebell. 
-                             Esercizi ad altissimo impatto: Affondi camminati, Burpees, Thruster con manubri, Rematore esplosivo, Step-up. Altissima intensità cardiovascolare.
-                             
-                        3. SELEZIONE INTELLIGENTE: Se l'atleta ha corso volumi estremi nelle ultime 24 ore, EVITA TASSATIVAMENTE il Tipo B e il Tipo C. Assegnagli il Tipo A (Upper Body) per salvare le gambe e il sistema cardiovascolare.
+                           - TIPO A: UPPER BODY (Potenza Neurale, Forza Pesante, Ipertrofia Braccia/Spalle).
+                           - TIPO B: LOWER BODY E CORE (Potenza salti, Squat/Stacchi pesanti, Core Anti-Rotazionale).
+                           - TIPO C: METABOLIC GOD MODE (Circuito ad altissima intensità con manubri/kettlebell, es. Hyrox).
+                           
+                        4. PROTOCOLLO ANTI-PARADOSSO (SALVA GAMBE): Se l'atleta ha corso volumi estremi o ripetute nelle ultime 24 ore, DEVI evitare il Tipo B o C. 
+                           ATTENZIONE: Se sei costretto a prescrivere il Tipo A (Upper Body) per salvare le gambe, MA l'atleta ha GIÀ fatto un Upper Body il giorno prima, NON FARGLI RIPETERE GLI STESSI ESERCIZI. Genera un "Tipo A - Variante 2" cambiando angoli di spinta (es. se ieri ha fatto panca piana, oggi fai distensioni inclinate; se ieri trazioni, oggi pulley). Oppure prescrivi una sessione di puro "CORE & MOBILITÀ".
                         
                         FORMAT OBBLIGATORIO:
                         - 📊 **[TELEMETRIA INGAGGIATA]**
-                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Indica chiaramente se hai scelto Upper, Lower o Metabolic e motiva la scelta analizzando lo storico e i km di corsa).
-                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Dettaglio chirurgico: Esercizi, Serie, Reps, Recupero in secondi, carico consigliato in base allo storico).
+                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega la rotazione e come hai evitato i doppioni in base allo storico reale).
+                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Dettaglio: Esercizi, Serie, Reps, Recupero in secondi, carico target estrapolato dallo storico).
                         - 🥩 **[BIO-HACKING NUTRIZIONALE]**
                         """
                         
