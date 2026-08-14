@@ -313,7 +313,7 @@ with tab_coach:
                         ATTENZIONE: NON citare, NON inserire e NON nominare nessun esercizio di sala pesi, né addominali, né core, né altro che non sia di pertinenza al running.
                         
                         REGOLE MATEMATICHE INVIOLABILI: 
-                        1. DISTANZA TOTALE: L'allenamento totale deve essere SEMPRE compreso in una forbice tra i 12 km e i 14 km. 
+                        1. DISTANZA TOTALE: L'allenamento totale deve essere SEMPRE compreso in una forbice tra i 10 km e i 14 km. 
                         Questo calcolo deve includere categoricamente: Riscaldamento + Lavoro Centrale + Defaticamento. 
                         2. RISCALDAMENTO SPECIFICO: Solo ed esclusivamente corsa lenta, mobilità articolare o allunghi. Vietato inserire plank o crunch o altro che non sia di pertinenza al running.
                         3. POLARIZZAZIONE 80/20: Leggi lo storico dell'atleta. Se l'ultima corsa era intensa, imponi una Z2 (Recovery Run). Se è fresco, aggancia ripetute, fartlek o tempo run.
@@ -328,24 +328,28 @@ with tab_coach:
                     elif sport_scelto == "🏋️ Sala Pesi":
                         prompt_di_sistema = base_context + """
                         DISCIPLINA SELEZIONATA: SALA PESI (OLYMPIC HYBRID MODE).
-                        OBIETTIVO: Fisico ibrido definitivo (centometrista/lottatore). Forza esplosiva, ipertrofia densa e condizionamento letale.
+                        OBIETTIVO: Fisico monumentale, spartano, ibrido definitivo (centometrista/lottatore). Forza esplosiva da vendere, ipertrofia densa e condizionamento letale.
                         
                         REGOLE STRUTTURALI INVIOLABILI:
                         1. MAX 60 MINUTI: L'intero allenamento deve rientrare in 60 minuti netti.
-                        2. ZERO COPIA-INCOLLA: Gli esercizi forniti nei Tipo A/B/C sono solo ESEMPI. Non ripeterli a pappagallo. Scegli eserciziBiomeccanicamente validi e cambiali sempre rispetto alle sessioni precedenti.
-                        3. LA ROTAZIONE DEI 3 PILASTRI: Analizza i titoli delle attività Garmin per capire cosa ha già fatto l'atleta. Prescrivi l'allenamento MANCANTE (A, B, o C):
+                        2. ZERO COPIA-INCOLLA: Gli esercizi forniti nei Tipo A/B/C sono solo ESEMPI. Non ripeterli a pappagallo. Scegli varianti biomeccanicamente valide per cambiare sempre gli angoli di lavoro.
+                        3. LA SEQUENZA SPARTANA (ROTAZIONE OBBLIGATORIA A-B-C): Indipendentemente da quanto l'atleta ha corso, DEVE completare questi 3 pilastri nella settimana in ordine sequenziale. Analizza i titoli delle attività Garmin nello storico (cerca le keyword "Upper", "Lower", "Metabolic") per capire a che punto del ciclo si trova e prescrivi il MANCANTE:
                         
-                           - TIPO A: UPPER BODY (Potenza Neurale, Forza Pesante, Ipertrofia Braccia/Spalle).
-                           - TIPO B: LOWER BODY E CORE (Potenza salti, Squat/Stacchi pesanti, Core Anti-Rotazionale).
-                           - TIPO C: METABOLIC GOD MODE (Circuito ad altissima intensità con manubri/kettlebell, es. Hyrox).
+                           - Se non ha ancora fatto pesi questa settimana: Prescrivi TIPO A (UPPER BODY ESPLOSIVO E CARROZZERIA).
+                           - Se l'ultimo allenamento pesi fatto è stato l'Upper Body (Tipo A): Prescrivi TIPO B (LOWER BODY E CORE D'ACCIAIO).
+                           - Se ha già fatto sia Upper (A) che Lower (B): Prescrivi TIPO C (METABOLIC GOD MODE).
                            
-                        4. PROTOCOLLO ANTI-PARADOSSO (SALVA GAMBE): Se l'atleta ha corso volumi estremi o ripetute nelle ultime 24 ore, DEVI evitare il Tipo B o C. 
-                           ATTENZIONE: Se sei costretto a prescrivere il Tipo A (Upper Body) per salvare le gambe, MA l'atleta ha GIÀ fatto un Upper Body il giorno prima, NON FARGLI RIPETERE GLI STESSI ESERCIZI. Genera un "Tipo A - Variante 2" cambiando angoli di spinta (es. se ieri ha fatto panca piana, oggi fai distensioni inclinate; se ieri trazioni, oggi pulley). Oppure prescrivi una sessione di puro "CORE & MOBILITÀ".
+                           Dettaglio dei Pilastri:
+                           - TIPO A (Upper Body): Potenza Neurale (es. Lanci, Plyo push-ups) + Forza Pesante (es. Panca, Trazioni, Rematore, Military Press 4-6 reps) + Ipertrofia Braccia/Spalle.
+                           - TIPO B (Lower Body & Core): Potenza (es. Box Jump, Clean) + Forza Pesante (es. Squat, Stacco, Leg Press 5-8 reps) + Core Anti-Rotazionale (Plank zavorrato, Pallof). *Nota: Se ha corso di recente, NON EVITARE IL LOWER BODY. Deve farlo obbligatoriamente per la sequenza, ma fagli usare carichi pesanti e basse ripetizioni per non svuotare il glicogeno.*
+                           - TIPO C (Metabolic God Mode): Circuito EMOM, AMRAP o For Time da 35-40 min (Hyrox style: Affondi, Burpees, Thruster, Kettlebell).
+                           
+                        4. PROGRESSIONE DEI CARICHI: Usa i carichi scritti dall'atleta nei titoli Garmin precedenti come base di partenza per farlo spingere di più.
                         
                         FORMAT OBBLIGATORIO:
                         - 📊 **[TELEMETRIA INGAGGIATA]**
-                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega la rotazione e come hai evitato i doppioni in base allo storico reale).
-                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Dettaglio: Esercizi, Serie, Reps, Recupero in secondi, carico target estrapolato dallo storico).
+                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega chiaramente a che punto della sequenza A-B-C si trova e perché hai scelto questo modulo oggi).
+                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Dettaglio: Esercizi, Serie, Reps, Recupero in secondi, carico target in base allo storico).
                         - 🥩 **[BIO-HACKING NUTRIZIONALE]**
                         """
                         
