@@ -64,7 +64,6 @@ def sincronizza_garmin_completo():
         requests.post(f"{supabase_url}/rest/v1/metrica_giornaliera", headers=headers_upsert, json=payload_giornaliero).raise_for_status()
 
         # --- B. Estrazione Ultime Attività Sportive ---
-        # BUGFIX: Aggiunto Prefer: resolution=merge-duplicates per permettere di aggiornare i nomi rinominati su Garmin!
         headers_insert = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"}
         activities = garmin.get_activities(0, 5) 
         for act in activities:
@@ -86,11 +85,10 @@ def sincronizza_garmin_completo():
             if t_load: payload_act["training_load"] = float(t_load)
             
             try:
-                # Ora se l'ID esiste già, sovrascrive i dati, aggiornando il titolo se lo hai cambiato!
                 res = requests.post(f"{supabase_url}/rest/v1/attivita_sportive", headers=headers_insert, json=payload_act)
                 res.raise_for_status()
             except requests.exceptions.HTTPError as e:
-                pass # Ignoriamo silenziosamente altri errori minori per non bloccare il loop
+                pass 
         return True
     except Exception as e:
         st.error(f"Errore critico Garmin: {e}")
@@ -157,7 +155,6 @@ with tab_dashboard:
         raw = ultima_riga.get('raw_data', {})
         if isinstance(raw, str): raw = {} 
         
-        # --- 1. METRICHE VITALI CON SPIEGAZIONI (Tooltips) ---
         col1, col2, col3, col4 = st.columns(4)
         
         sonno = ultima_riga.get('sonno_ore')
@@ -177,7 +174,6 @@ with tab_dashboard:
         col4.metric("Stress Medio", f"{stress_val} / 100", help="Heart Rate Variability (HRV). Misura la tensione del sistema nervoso. 0-25: Riposo. 26-50: Basso. 51-75: Medio. 76-100: Alto (Sovrallenamento).")
         st.markdown("---")
 
-        # --- 2. ULTIMO INTAGGIO SUL CAMPO CON SPIEGAZIONI ---
         st.subheader("🏅 Ultimo Ingaggio sul Campo")
         if not df_attivita.empty:
             ultima_att = df_attivita.iloc[0]
@@ -198,7 +194,6 @@ with tab_dashboard:
             st.info("Nessuna attività registrata.")
         st.markdown("---")
 
-        # --- 3. I 4 GRAFICI GOD MODE (Bug Risolto) ---
         col_top1, col_top2 = st.columns(2)
         
         with col_top1:
@@ -238,7 +233,6 @@ with tab_dashboard:
             if not df_attivita.empty:
                 df_grafico_att = df_attivita.head(7).copy()
                 
-                # BUGFIX: Forza la conversione in Datetime di Pandas prima del formattare la stringa
                 df_grafico_att['data'] = pd.to_datetime(df_grafico_att['data']).dt.strftime('%d/%m')
                 
                 if 'titolo_allenamento' not in df_grafico_att.columns:
@@ -278,7 +272,13 @@ with tab_coach:
                 with st.spinner(f'Elaborazione balistica in corso per {sport_scelto}...'):
                     
                     oggi = pd.Timestamp(date.today())
-                    inizio_settimana = oggi - pd.Timedelta(days=oggi.dayofweek)
+                    
+                    # --- BUGFIX: CALCOLO INIZIO SETTIMANA ---
+                    # In Pandas, dayofweek lunedì=0, domenica=6. 
+                    # Vogliamo che la settimana inizi la Domenica, quindi se oggi è domenica consideriamo oggi stesso, 
+                    # altrimenti andiamo indietro fino alla domenica precedente.
+                    giorni_da_sottrarre = (oggi.dayofweek + 1) % 7 
+                    inizio_settimana = oggi - pd.Timedelta(days=giorni_da_sottrarre)
                     
                     bb_attuale_energia = df_master.iloc[-1].get('body_battery_attuale', 'N/D')
                     peso_attuale = df_master.iloc[-1].get('peso_kg', 75.0)
@@ -287,7 +287,6 @@ with tab_coach:
                     if not df_attivita.empty:
                         df_attivita['data'] = pd.to_datetime(df_attivita['data'])
                         
-                        # HACK DI SISTEMA: Estrazione chirurgica del Titolo dell'attività dai dati grezzi Garmin
                         def estrai_nome_garmin(raw):
                             if isinstance(raw, dict):
                                 return raw.get('activityName', 'Generico')
@@ -295,12 +294,11 @@ with tab_coach:
                             
                         df_attivita['titolo_allenamento'] = df_attivita['raw_data'].apply(estrai_nome_garmin)
                         
-                        # Creiamo lo storico passando anche il titolo che l'utente ha scritto sull'app Garmin
+                        # Filtriamo lo storico inviato all'AI ESATTAMENTE a partire dall'inizio_settimana calcolato
                         storico_attivita = df_attivita[df_attivita['data'] >= inizio_settimana].drop(columns=['raw_data'], errors='ignore').to_dict(orient="records")
                     else:
                         storico_attivita = "Nessun allenamento"
                     
-                    # --- PROMPT DINAMICO BASATO SULLA SCELTA ---
                     base_context = f"""
                     Sei "The Notorious", il Coach Olimpionico estremo. Alleni Francesco, 40 anni, Ingegnere Gestionale, Data & Process Analyst, Business Intelligence. 
                     Peso: {peso_attuale} kg. Massa muscolare: {muscoli_attuali} kg.
@@ -326,24 +324,25 @@ with tab_coach:
                         """
                         
                     elif sport_scelto == "🏋️ Sala Pesi":
-                        prompt_di_sistema = base_context + """
+                        prompt_di_sistema = base_context + f"""
                         DISCIPLINA SELEZIONATA: SALA PESI (OLYMPIC HYBRID MODE).
                         OBIETTIVO: Fisico monumentale, spartano, ibrido definitivo (centometrista/lottatore). Forza esplosiva da vendere, ipertrofia densa e condizionamento letale per dominare l'Hyrox e la corsa.
                         
                         REGOLE STRUTTURALI INVIOLABILI:
                         1. MAX 60 MINUTI: L'intero allenamento deve rientrare in 60 minuti netti. Cronometro alla mano.
-                        2. ZERO COPIA-INCOLLA: Cambia sempre gli esercizi o gli angoli di lavoro rispetto alla settimana precedente, mantenendo la biomeccanica coerente.
-                        3. LA SEQUENZA SPARTANA (A -> B -> C): Devi rispettare la rotazione. Analizza i titoli Garmin:
-                           - Se manca o è lontano, inizia con TIPO A (Upper).
-                           - Se l'ultimo è stato TIPO A, imponi TIPO B (Lower).
-                           - Se ha fatto A e B, chiudi la settimana con TIPO C (Metabolic).
+                        2. ZERO COPIA-INCOLLA: Cambia sempre gli esercizi o gli angoli di lavoro rispetto alle sessioni precedenti, mantenendo la biomeccanica coerente.
+                        3. IL CONFINAMENTO SETTIMANALE: Il microciclo di allenamento che riceverai (la variabile '{storico_attivita}') inizia a partire dalla Domenica e rappresenta ESCLUSIVAMENTE la settimana di allenamento in corso. TUTTO quello che è avvenuto prima di questa Domenica è stato azzerato e non conta. 
+                        4. LA SEQUENZA SPARTANA RIGIDA (A -> B -> C): Devi rispettare la rotazione all'interno di questa specifica settimana in corso. Analizza minuziosamente i titoli Garmin forniti:
+                           - Se nello storico fornito non c'è NESSUN allenamento di tipo "strength_training" o i cui titoli contengono "Upper", "Lower" o "Metabolic": DEVI INIZIARE OBBLIGATORIAMENTE DA TIPO A (Upper).
+                           - Se nello storico fornito c'è solo un TIPO A: Imponi TIPO B (Lower).
+                           - Se nello storico fornito ci sono sia TIPO A che TIPO B: Chiudi la settimana con TIPO C (Metabolic).
                         
                         ARCHITETTURA OBBLIGATORIA DELLE SESSIONI:
                         Ogni volta che prescrivi il Tipo A o il Tipo B, il tuo output DEVE essere tassativamente diviso in queste 3 Fasi specifiche:
                         
                         [PER IL TIPO B - LOWER BODY & CORE]:
                         - Fase 1: Esplosività Pura (es. Box Jump, Broad Jump, Kettlebell Swing). 3-4 serie, poche rep, esplosione massima.
-                        - Fase 2: Forza Pesante (es. Squat, Stacco Rumeno, Leg Press). 4-5 serie, 5-8 rep. Carichi altissimi (basati sul suo storico) per non svuotare il glicogeno, ma reclutare tutte le fibre bianche.
+                        - Fase 2: Forza Pesante (es. Squat, Stacco Rumeno, Leg Press). 4-5 serie, 5-8 rep. Carichi altissimi per non svuotare il glicogeno, ma reclutare le fibre bianche.
                         - Fase 3: Core Anti-Rotazionale e Stabilità (es. Plank zavorrato, Pallof Press, Farmer's Walk pesante).
                         
                         [PER IL TIPO A - UPPER BODY]:
@@ -352,11 +351,11 @@ with tab_coach:
                         - Fase 3: Ipertrofia Accessoria (Braccia e Spalle ad alta intensità).
                         
                         [PER IL TIPO C - METABOLIC GOD MODE (HYROX PREP)]:
-                        - Un singolo blocco massacrante (Circuito EMOM, AMRAP, o For Time) da 35-45 min con affondi, burpees, stacchi leggeri, thruster. Niente fasi, solo distruzione cardiovascolare con i pesi.
+                        - Un singolo blocco massacrante (Circuito EMOM, AMRAP, o For Time) da 35-45 min con affondi, burpees, stacchi leggeri, thruster. Niente fasi.
                         
                         FORMAT OBBLIGATORIO DEL TUO OUTPUT:
                         - 📊 **[TELEMETRIA INGAGGIATA]**
-                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega chiaramente a che punto della sequenza A-B-C si trova e perché).
+                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega chiaramente che stai applicando il modulo corretto della Sequenza Spartana A-B-C per questa settimana in corso).
                         - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Scrivi chiaramente "Fase 1", "Fase 2", "Fase 3" con esercizi, serie, rep e recuperi. Per il Tipo C scrivi il Circuito completo).
                         - 🥩 **[BIO-HACKING NUTRIZIONALE]**
                         """
