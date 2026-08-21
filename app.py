@@ -192,7 +192,65 @@ with tab_dashboard:
             col_a4.metric("Impatto Aerobico", f"{te_aerobico} TE" if pd.notna(te_aerobico) else "N/D", help="Training Effect (TE). Misura l'impatto sulla tua resistenza aerobica. 1.0-1.9: Recupero. 2.0-2.9: Mantenimento. 3.0-3.9: Miglioramento. 4.0-4.9: Netto miglioramento. 5.0: Sovraccarico (Overreaching).")
         else:
             st.info("Nessuna attività registrata.")
+            
+        # ==========================================
+        # NUOVO MODULO: DEBRIEFING DELL'AI COACH
+        # ==========================================
+        if not df_attivita.empty:
+            with st.expander("🎙️ RICHIEDI DEBRIEFING COACH (Analisi Telemetrica)"):
+                if st.button("Genera Analisi Post-Allenamento", use_container_width=True):
+                    with st.spinner("Decriptazione telemetria Garmin in corso..."):
+                        act_raw = df_attivita.iloc[0].get('raw_data', {})
+                        
+                        # Estrazione metriche avanzate (con conversioni ingegneristiche)
+                        distanza_metri = act_raw.get('distance', 0)
+                        distanza_km = round(distanza_metri / 1000, 2) if distanza_metri else "N/D"
+                        
+                        velocita_ms = act_raw.get('averageSpeed', 0)
+                        passo_min_km = "N/D"
+                        if velocita_ms and velocita_ms > 0:
+                            minuti_decimali = 16.6667 / velocita_ms
+                            minuti = int(minuti_decimali)
+                            secondi = int((minuti_decimali - minuti) * 60)
+                            passo_min_km = f"{minuti}:{secondi:02d} min/km"
+
+                        prompt_debriefing = f"""
+                        Sei "The Notorious", il Coach Olimpionico. 
+                        Analizza la telemetria dell'ULTIMO ALLENAMENTO APPENA CONCLUSO del tuo atleta Francesco (40 anni, obiettivo fisico ibrido spartano).
+                        
+                        DATI TELEMETRICI ESTRATTI DA GARMIN:
+                        - Disciplina: {str(df_attivita.iloc[0].get('tipo_sport', 'N/D')).replace('_', ' ').title()}
+                        - Titolo Attività: {df_attivita.iloc[0].get('titolo_allenamento', 'Generico')}
+                        - Durata: {df_attivita.iloc[0].get('durata_minuti', 'N/D')} minuti
+                        - Distanza: {distanza_km} km (se N/D, era un allenamento stazionario)
+                        - Passo Medio: {passo_min_km} (se N/D, ignora)
+                        - FC Media: {df_attivita.iloc[0].get('fc_media', 'N/D')} bpm
+                        - FC Max: {df_attivita.iloc[0].get('fc_max', 'N/D')} bpm
+                        - Training Effect Aerobico: {df_attivita.iloc[0].get('training_effect_aerobico', 'N/D')}
+                        - Training Effect Anaerobico: {df_attivita.iloc[0].get('training_effect_anaerobico', 'N/D')}
+                        
+                        LA TUA MISSIONE:
+                        Fai un "Debriefing" tecnico e spietato. Valuta se l'intensità (FC, Passo, TE) è coerente con il Titolo dell'Attività (es. se è una "Recovery Run" i battiti dovevano essere bassi; se sono "Ripetute" mi aspetto un TE Anaerobico alto e FC Max elevata; se è "Pesi" ignora il passo). 
+                        
+                        FORMAT OBBLIGATORIO:
+                        - 🎯 **VALUTAZIONE ESECUTIVA:** (Giudizio netto in 2 righe).
+                        - 📈 **ANALISI MOTORE:** (Analisi dei battiti, del passo o dell'impatto sul sistema cardiovascolare/nervoso in base al Training Effect).
+                        - ⚠️ **VERDETTO DEL COACH:** (Un consiglio tagliente su come gestire il recupero o il prossimo allenamento).
+                        """
+                        
+                        try:
+                            risposta_debrief = client.chat.completions.create(
+                                model="gpt-4o-mini",
+                                messages=[{"role": "system", "content": prompt_debriefing}],
+                                temperature=0.6
+                            )
+                            st.info(risposta_debrief.choices[0].message.content)
+                        except Exception as e:
+                            st.error(f"Errore di connessione al motore AI: {e}")
+
         st.markdown("---")
+
+        # --- 3. I 4 GRAFICI GOD MODE (Bug Risolto) ---
 
         col_top1, col_top2 = st.columns(2)
         
