@@ -388,33 +388,37 @@ with tab_coach:
                         
                         REGOLE STRUTTURALI INVIOLABILI:
                         1. MAX 60 MINUTI: L'intero allenamento deve rientrare in 60 minuti netti. Cronometro alla mano.
-                        2. ZERO COPIA-INCOLLA: Cambia sempre gli esercizi o gli angoli di lavoro rispetto alle sessioni precedenti, mantenendo la biomeccanica coerente.
-                        3. IL CONFINAMENTO SETTIMANALE: Il microciclo di allenamento che riceverai (la variabile '{storico_attivita}') inizia a partire dalla Domenica e rappresenta ESCLUSIVAMENTE la settimana di allenamento in corso. TUTTO quello che è avvenuto prima di questa Domenica è stato azzerato e non conta. 
+                        2. MOTORE DI VARIANZA BIOMECCANICA (CRUCIALE): L'atleta si sta abituando perché gli stai proponendo sempre Panca/Trazioni/Squat/Stacco. DEVI VARIARE SEMPRE GLI ANGOLI DI LAVORO rispetto alla settimana precedente. 
+                           - Varianti Upper Spinta: Alterna Panca piana bilanciere, Panca Inclinata manubri, Floor press, Dips zavorrate, Spinte su declinata, Push press.
+                           - Varianti Upper Tirata: Alterna Trazioni (prona/supina), Rematore bilanciere, Rematore manubri, Seal Row, Pulley basso, Lat machine triangolo.
+                           - Varianti Lower: Alterna Squat classico, Front Squat, Hack Squat, Bulgarian Split Squat, Stacco Trap Bar, Stacco Rumeno, Leg Press pesante.
+                           Sii spietato, creativo e imprevedibile. Sorprendi l'atleta.
+                        3. IL CONFINAMENTO SETTIMANALE: Il microciclo di allenamento che riceverai (la variabile '{storico_attivita}') inizia a partire dalla Domenica e rappresenta ESCLUSIVAMENTE la settimana di allenamento in corso. 
                         4. LA SEQUENZA SPARTANA RIGIDA (A -> B -> C): Devi rispettare la rotazione all'interno di questa specifica settimana in corso. Analizza minuziosamente i titoli Garmin forniti:
-                           - Se nello storico fornito non c'è NESSUN allenamento di tipo "strength_training" o i cui titoli contengono "Upper", "Lower" o "Metabolic": DEVI INIZIARE OBBLIGATORIAMENTE DA TIPO A (Upper).
-                           - Se nello storico fornito c'è solo un TIPO A: Imponi TIPO B (Lower).
-                           - Se nello storico fornito ci sono sia TIPO A che TIPO B: Chiudi la settimana con TIPO C (Metabolic).
+                           - Se nello storico non c'è NESSUN allenamento pesi: INIZIA DA TIPO A (Upper).
+                           - Se c'è solo un TIPO A: Imponi TIPO B (Lower).
+                           - Se ci sono sia TIPO A che TIPO B: Chiudi con TIPO C (Metabolic).
                         
                         ARCHITETTURA OBBLIGATORIA DELLE SESSIONI:
-                        Ogni volta che prescrivi il Tipo A o il Tipo B, il tuo output DEVE essere tassativamente diviso in queste 3 Fasi specifiche:
+                        Il tuo output DEVE essere tassativamente diviso in queste 3 Fasi specifiche:
                         
                         [PER IL TIPO B - LOWER BODY & CORE]:
-                        - Fase 1: Esplosività Pura (es. Box Jump, Broad Jump, Kettlebell Swing). 3-4 serie, poche rep, esplosione massima.
-                        - Fase 2: Forza Pesante (es. Squat, Stacco Rumeno, Leg Press). 4-5 serie, 5-8 rep. Carichi altissimi per non svuotare il glicogeno, ma reclutare le fibre bianche.
-                        - Fase 3: Core Anti-Rotazionale e Stabilità (es. Plank zavorrato, Pallof Press, Farmer's Walk pesante).
+                        - Fase 1: Esplosività Pura (Cambia sempre attrezzo: Box Jump, Broad Jump, Kettlebell Swing, o Cleans). 3-4 serie, poche rep, esplosione massima.
+                        - Fase 2: Forza Pesante (Applica il Motore di Varianza per scegliere il multiarticolare. 4-5 serie, 5-8 rep).
+                        - Fase 3: Core Anti-Rotazionale e Stabilità (Es. Plank zavorrato, Pallof Press, Farmer's Walk, o Ab-Roll).
                         
                         [PER IL TIPO A - UPPER BODY]:
-                        - Fase 1: Esplosività (Plyo push-up, Lanci palla medica).
-                        - Fase 2: Forza Base (Panca, Trazioni, Rematore, Military).
-                        - Fase 3: Ipertrofia Accessoria (Braccia e Spalle ad alta intensità).
+                        - Fase 1: Esplosività Neurale (Es. Plyo push-ups, Lanci esplosivi).
+                        - Fase 2: Forza Base (Applica il Motore di Varianza per 1 Spinta Orizzontale/Verticale e 1 Tirata Orizzontale/Verticale).
+                        - Fase 3: Ipertrofia Accessoria (Braccia e Spalle con cavi o manubri, alta intensità).
                         
                         [PER IL TIPO C - METABOLIC GOD MODE (HYROX PREP)]:
-                        - Un singolo blocco massacrante (Circuito EMOM, AMRAP, o For Time) da 35-45 min con affondi, burpees, stacchi leggeri, thruster. Niente fasi.
+                        - Un singolo blocco massacrante (Circuito EMOM, AMRAP, o For Time) da 35-45 min. Mescola sempre: esercizi di spinta (Thruster, Wall ball), trazione (Rematori, trazioni), gambe (Affondi, Box step-up) e condizionamento (Burpees, Corsa sul posto, Rowing).
                         
                         FORMAT OBBLIGATORIO DEL TUO OUTPUT:
                         - 📊 **[TELEMETRIA INGAGGIATA]**
-                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega chiaramente che stai applicando il modulo corretto della Sequenza Spartana A-B-C per questa settimana in corso).
-                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Scrivi chiaramente "Fase 1", "Fase 2", "Fase 3" con esercizi, serie, rep e recuperi. Per il Tipo C scrivi il Circuito completo).
+                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega a che punto della sequenza si trova. SOTTOLINEA le variazioni biomeccaniche che hai inserito oggi rispetto ai classici multiarticolari per shockare il muscolo).
+                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Scrivi "Fase 1", "Fase 2", "Fase 3" con esercizi NUOVI, serie, rep e recuperi. Per il Tipo C scrivi il Circuito completo).
                         - 🥩 **[BIO-HACKING NUTRIZIONALE]**
                         """
                         
