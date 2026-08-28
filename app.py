@@ -65,7 +65,7 @@ def sincronizza_garmin_completo():
 
         # --- B. Estrazione Ultime Attività Sportive ---
         headers_insert = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}", "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"}
-        activities = garmin.get_activities(0, 5) 
+        activities = garmin.get_activities(0, 15) 
         for act in activities:
             act_date = act.get('startTimeLocal', '').split(' ')[0]
             if not act_date: continue
@@ -394,10 +394,14 @@ with tab_coach:
                            - Varianti Lower: Alterna Squat classico, Front Squat, Hack Squat, Bulgarian Split Squat, Stacco Trap Bar, Stacco Rumeno, Leg Press pesante.
                            Sii spietato, creativo e imprevedibile. Sorprendi l'atleta.
                         3. IL CONFINAMENTO SETTIMANALE: Il microciclo di allenamento che riceverai (la variabile '{storico_attivita}') inizia a partire dalla Domenica e rappresenta ESCLUSIVAMENTE la settimana di allenamento in corso. 
-                        4. LA SEQUENZA SPARTANA RIGIDA (A -> B -> C): Devi rispettare la rotazione all'interno di questa specifica settimana in corso. Analizza minuziosamente i titoli Garmin forniti:
-                           - Se nello storico non c'è NESSUN allenamento pesi: INIZIA DA TIPO A (Upper).
-                           - Se c'è solo un TIPO A: Imponi TIPO B (Lower).
-                           - Se ci sono sia TIPO A che TIPO B: Chiudi con TIPO C (Metabolic).
+                        4. LA SEQUENZA SPARTANA RIGIDA (A -> B -> C): Devi rispettare la rotazione all'interno di questa specifica settimana in corso. 
+                           ATTENZIONE AL RICONOSCIMENTO (CRUCIALE): L'atleta usa parole chiave in inglese nei titoli. 
+                           - La parola "Upper" nel titolo significa che ha GIA' FATTO il TIPO A. 
+                           - La parola "Lower" nel titolo significa che ha GIA' FATTO il TIPO B. 
+                           Analizza i titoli presenti nello storico di questa settimana con estrema precisione logica:
+                           - Se NON trovi la parola "Upper" in nessun titolo settimanale: DEVI generare il TIPO A (Upper Body).
+                           - Se trovi la parola "Upper", ma NON trovi la parola "Lower": DEVI generare il TIPO B (Lower Body).
+                           - Se trovi SIA la parola "Upper" CHE la parola "Lower" nei titoli: DEVI OBBLIGATORIAMENTE generare il TIPO C (Metabolic God Mode).
                         
                         ARCHITETTURA OBBLIGATORIA DELLE SESSIONI:
                         Il tuo output DEVE essere tassativamente diviso in queste 3 Fasi specifiche:
