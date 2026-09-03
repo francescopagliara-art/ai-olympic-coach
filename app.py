@@ -372,7 +372,9 @@ with tab_coach:
                         1. DISTANZA TOTALE: L'allenamento totale deve essere SEMPRE compreso in una forbice tra i 10 km e i 14 km. 
                         Questo calcolo deve includere categoricamente: Riscaldamento + Lavoro Centrale + Defaticamento. 
                         2. RISCALDAMENTO SPECIFICO: Solo ed esclusivamente corsa lenta, mobilità articolare o allunghi. Vietato inserire plank o crunch o altro che non sia di pertinenza al running.
-                        3. POLARIZZAZIONE 80/20: Leggi lo storico dell'atleta. Se l'ultima corsa era intensa, imponi una Z2 (Recovery Run). Se è fresco, aggancia ripetute, fartlek o tempo run.
+                        3. POLARIZZAZIONE 80/20 E ZONE CARDIACHE: Leggi lo storico dell'atleta. 
+                           - Se l'ultima corsa era intensa (o ha fatto TIPO B in sala pesi di recente), imponi una Z2 (Recovery Run) e specifica il tetto massimo di battiti. 
+                           - Se è fresco, aggancia lavori di qualità (ripetute, fartlek o tempo run) indicando chiaramente i ritmi al chilometro target.
                         
                         FORMAT OBBLIGATORIO:
                         - 📊 **[TELEMETRIA INGAGGIATA]**
@@ -402,6 +404,10 @@ with tab_coach:
                            - Se NON trovi la parola "Upper" in nessun titolo settimanale: DEVI generare il TIPO A (Upper Body).
                            - Se trovi la parola "Upper", ma NON trovi la parola "Lower": DEVI generare il TIPO B (Lower Body).
                            - Se trovi SIA la parola "Upper" CHE la parola "Lower" nei titoli: DEVI OBBLIGATORIAMENTE generare il TIPO C (Metabolic God Mode).
+                        5. GESTIONE DEL CEDIMENTO (RIR): Per ogni esercizio delle Fasi 1 e 2 (Potenza e Forza), DEVI specificare il RIR (Ripetizioni In Riserva). 
+                           - L'esplosività (Fase 1) richiede un RIR alto (lascia 3-4 colpi in canna per muovere il carico alla massima velocità). 
+                           - La forza pesante (Fase 2) richiede un RIR 1-2 (sfiora il cedimento ma mantieni la tecnica). 
+                           - L'ipertrofia (Fase 3) deve andare a cedimento totale (RIR 0). Non lasciare nulla al caso.
                         
                         ARCHITETTURA OBBLIGATORIA DELLE SESSIONI:
                         Il tuo output DEVE essere tassativamente diviso in queste 3 Fasi specifiche:
