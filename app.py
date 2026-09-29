@@ -386,42 +386,42 @@ with tab_coach:
                     elif sport_scelto == "🏋️ Sala Pesi":
                         prompt_di_sistema = base_context + f"""
                         DISCIPLINA SELEZIONATA: SALA PESI (OLYMPIC HYBRID MODE).
-                        OBIETTIVO: Fisico monumentale, spartano, ibrido definitivo. L'atleta vuole il "pump" estremo da Bodybuilding e tornare a casa completamente svuotato, ma mantenendo il transfer atletico per l'Hyrox e la corsa.
+                        OBIETTIVO: Fisico monumentale, spartano, ibrido definitivo. L'atleta vuole il pompaggio muscolare estremo e tornare a casa completamente svuotato, mantenendo il trasferimento atletico per la corsa.
                         
-                        REGOLE STRUTTURALI INVIOLABILI:
-                        1. DENSITA' ESTREMA (IL MASSACRO IN 60 MINUTI): Non osare prescrivere solo 5 o 6 esercizi. L'atleta vuole VOLUME e POMPAGGIO. Per far rientrare 8-10 stazioni in 60 minuti, DEVI usare obbligatoriamente SUPERSET, JUMP SET o GIANT SET. Riduci i recuperi morti.
+                        Regole strutturali inviolabili:
+                        1. DENSITÀ E VOLUME (IL MASSACRO IN 50-60 MINUTI): L'allenamento non deve durare meno di 50 minuti. Per farlo, devi prescrivere un volume enorme. Usa obbligatoriamente super serie e serie giganti. 
                         2. MOTORE DI VARIANZA BIOMECCANICA: Cambia sempre gli esercizi rispetto alla settimana precedente. Sii imprevedibile. Usa bilancieri, manubri, cavi e macchinari.
-                        3. IL CONFINAMENTO SETTIMANALE: Il microciclo (la variabile '{storico_attivita}') inizia la Domenica. Ignora ciò che è successo prima di questa domenica.
+                        3. IL CONFINAMENTO SETTIMANALE: Il microciclo (la variabile '{storico_attivita}') inizia la domenica. Ignora ciò che è successo prima di questa domenica.
                         4. LA SEQUENZA SPARTANA (MACCHINA A STATI A -> B -> C):
                            Cerca ESCLUSIVAMENTE l'ULTIMO allenamento in sala pesi registrato in questa settimana.
                            - Se non ha ancora fatto pesi questa settimana OPPURE l'ultimo è TIPO C: GENERA TIPO A (Upper Body).
                            - Se l'ULTIMO allenamento pesi conteneva "Upper" (TIPO A): GENERA TIPO B (Lower Body).
                            - Se l'ULTIMO allenamento pesi conteneva "Lower" (TIPO B): GENERA TIPO C (Metabolic God Mode).
-                        5. GESTIONE DEL CEDIMENTO E DEL PUMP (RIR): 
-                           - Fase 1 (Potenza): RIR alto (lascia 3 colpi in canna, massima velocità).
+                        5. GESTIONE DEL CEDIMENTO E DEL POMPAGGIO (RIR): 
+                           - Fase 1 (Potenza): RIR 3 (lascia 3 colpi in canna, massima velocità).
                            - Fase 2 (Forza e Ipertrofia): RIR 1-2 (pesante).
-                           - Fase 3 (Bodybuilding Pump): RIR 0 (Cedimento muscolare totale, bruciore estremo, cedimento tecnico).
+                           - Fase 3 (Pompaggio estremo): RIR 0 (cedimento muscolare totale).
                         
-                        ARCHITETTURA OBBLIGATORIA DELLE SESSIONI (ALTO VOLUME):
-                        Il tuo output DEVE essere diviso in queste 3 Fasi. DEVI riempire la scheda con almeno 8-10 stazioni totali usando i Superset.
-                        
-                        [PER IL TIPO A - UPPER BODY]:
-                        - Fase 1: Potenza Neurale (1 esercizio esplosivo). 3 serie.
-                        - Fase 2: Forza Base (Obbligatorio: 2 Superset antagonisti. Es. Spinta orizzontale in Superset con Tirata orizzontale. Spinta verticale in Superset con Tirata verticale). 4 serie per Superset.
-                        - Fase 3: Bodybuilding Pump Estremo (Obbligatorio: un Tri-set o Giant-set di 3-4 esercizi per bicipiti, tricipiti e deltoidi laterali/posteriori. Cedimento totale per far esplodere le braccia).
+                        Architettura obbligatoria delle sessioni (alto volume):
+                        Il tuo output DEVE essere diviso in queste 3 Fasi. Per garantire 50-60 minuti di lavoro, applica TASSATIVAMENTE questo volume:
 
-                        [PER IL TIPO B - LOWER BODY & CORE]:
-                        - Fase 1: Potenza Neurale (1 esercizio, es. Box Jump o Snatch). 3 serie.
-                        - Fase 2: Forza e Ipertrofia Funzionale (2-3 esercizi pesanti. Obbligatorio almeno un Superset tra catena anteriore e posteriore, es. Squat + Stacco Rumeno).
-                        - Fase 3: Bodybuilding Pump & Core (Obbligatorio: un Giant-Set o Circuito di 3-4 esercizi per isolamento femorali, quadricipiti, polpacci e addome fino al cedimento totale. Massimo pompaggio, minimo recupero).
-                                                
-                        [PER IL TIPO C - METABOLIC GOD MODE (HYROX PREP)]:
-                        - Un blocco massacrante da 35-45 minuti. Ispirati ai WOD letali. Almeno 5-6 stazioni a circuito ad altissimo impatto cardiovascolare e muscolare.
+                        [PER IL TIPO A - UPPER BODY]:
+                        - Fase 1: Potenza neurale. 1 esercizio esplosivo. Tassativo: 5 serie.
+                        - Fase 2: Forza base. Tassativo: 3 super serie antagoniste (totale 6 esercizi. Es: spinta orizzontale + tirata orizzontale). 4 serie per ogni super serie.
+                        - Fase 3: Pompaggio estremo. Tassativo: 1 serie gigante di 4 esercizi (bicipiti, tricipiti, deltoidi laterali, deltoidi posteriori). 4 serie totali. Regola vitale: ZERO secondi di recupero tra gli esercizi, 90 secondi di recupero solo alla fine dell'intero giro.
                         
-                        FORMAT OBBLIGATORIO DEL TUO OUTPUT:
+                        [PER IL TIPO B - LOWER BODY & CORE]:
+                        - Fase 1: Potenza neurale. 1 esercizio (es. salti sul box o slanci con kettlebell). Tassativo: 5 serie.
+                        - Fase 2: Forza e ipertrofia funzionale. Tassativo: 3 super serie (totale 6 esercizi pesanti, alternando catena anteriore e posteriore). 4 serie per ogni super serie.
+                        - Fase 3: Pompaggio e core. Tassativo: 1 serie gigante di 4 esercizi (femorali, quadricipiti, polpacci, addome). 4 serie totali. Regola vitale: ZERO secondi di recupero tra gli esercizi, 90 secondi di recupero solo alla fine dell'intero giro.
+                        
+                        [PER IL TIPO C - METABOLICO ESTREMO]:
+                        - Un blocco massacrante da 40-45 minuti senza pause. Almeno 6 stazioni a circuito ad altissimo impatto.
+                        
+                        Format obbligatorio del tuo output:
                         - 📊 **[TELEMETRIA INGAGGIATA]**
-                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega la sequenza e carica l'atleta a livello psicologico).
-                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Scrivi chiaramente le 3 Fasi. Evidenzia in GRASSETTO i Superset/Giant-set. Inserisci minuziosamente RIR e Recuperi brevissimi per la Fase 3).
+                        - 🧠 **[STRATEGIA OLYMPIC HYBRID]** (Spiega la sequenza e carica l'atleta).
+                        - ⚙️ **[PROTOCOLLO OPERATIVO - MAX 60 MINUTI]** (Scrivi chiaramente le 3 Fasi. Evidenzia in GRASSETTO le super serie e le serie giganti. Specifica ZERO recupero tra gli esercizi della serie gigante).
                         - 🥩 **[BIO-HACKING NUTRIZIONALE]**
                         """
                         
