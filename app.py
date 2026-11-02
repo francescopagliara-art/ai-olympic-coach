@@ -27,7 +27,7 @@ st.set_page_config(page_title="Protocollo I90 | Sistema operativo ibrido", page_
 # 2. FUNZIONI DI SALVATAGGIO E SINCRONIZZAZIONE
 # ==========================================
 def salva_dato_i90_giornaliero(chiave_json, payload_specifico):
-    """Salva i dati I90 (abitudini, massimali, registro carichi) dentro raw_data preservando i dati Garmin."""
+    """Salva i dati I90 dentro raw_data preservando i dati Garmin."""
     oggi_str = date.today().isoformat()
     headers_get = {"apikey": supabase_key, "Authorization": f"Bearer {supabase_key}"}
     headers_upsert = {
@@ -66,7 +66,6 @@ def sincronizza_garmin_completo():
             "Prefer": "resolution=merge-duplicates"
         }
 
-        # Preserva tutti i blocchi custom I90 già salvati nella giornata odierna
         chiavi_i90_salvate = {}
         res_esistente = requests.get(f"{supabase_url}/rest/v1/metrica_giornaliera?data=eq.{oggi}&select=raw_data", headers=headers_get)
         if res_esistente.status_code == 200 and len(res_esistente.json()) > 0:
@@ -76,7 +75,6 @@ def sincronizza_garmin_completo():
                     if k in raw_esistente:
                         chiavi_i90_salvate[k] = raw_esistente[k]
 
-        # A. Estrazione metriche giornaliere
         stats = garmin.get_stats(oggi)
         if not isinstance(stats, dict):
             stats = {}
@@ -116,7 +114,6 @@ def sincronizza_garmin_completo():
         }
         requests.post(f"{supabase_url}/rest/v1/metrica_giornaliera", headers=headers_upsert, json=payload_giornaliero).raise_for_status()
 
-        # B. Estrazione ultime 15 attività sportive
         activities = garmin.get_activities(0, 15) 
         for act in activities:
             act_date = act.get('startTimeLocal', '').split(' ')[0]
@@ -188,7 +185,6 @@ def fetch_data():
 
 df_master, df_attivita = fetch_data()
 
-# Estrazione storico massimali, allenamenti registrati e ultimo stato ciclo/settimana
 lista_benchmarks = []
 lista_workout_logs = []
 ultimo_stato_i90 = {"ciclo": 1, "settimana": 1}
@@ -212,13 +208,14 @@ if not df_master.empty and "raw_data" in df_master.columns:
 df_benchmarks = pd.DataFrame(lista_benchmarks)
 df_workout_logs = pd.DataFrame(lista_workout_logs)
 
-# Valori di riferimento attuali (prende gli ultimi salvati o imposta valori base)
 bench_attuali = {
-    "panca_1rm": 85.0,
-    "squat_1rm": 110.0,
-    "stacco_1rm": 130.0,
-    "military_1rm": 52.5,
-    "trazioni_max": 12,
+    "panca_1rm": 80.0,
+    "squat_1rm": 100.0,
+    "stacco_1rm": 120.0,
+    "military_1rm": 50.0,
+    "trazioni_max": 10,
+    "dip_max": 15,
+    "curl_kg": 30.0,
     "passo_5k": "04:50"
 }
 if not df_benchmarks.empty:
@@ -226,6 +223,11 @@ if not df_benchmarks.empty:
     for k in bench_attuali.keys():
         if k in ultimo_b and pd.notna(ultimo_b[k]):
             bench_attuali[k] = ultimo_b[k]
+
+# Inizializzazione stato per il passaggio dal calcolatore submassimale al form
+for k, v in bench_attuali.items():
+    if f"input_{k}" not in st.session_state:
+        st.session_state[f"input_{k}"] = v
 
 # ==========================================
 # 4. BARRA LATERALE: CONTROLLO CICLO E SETTIMANA
@@ -263,26 +265,24 @@ with st.sidebar:
         except Exception as e:
             st.error(f"Errore salvataggio: {e}")
 
-    # Calcolo matematico della periodizzazione 3:1 e delle percentuali
     mappa_parametri_settimana = {
-        1:  {"blocco": "Blocco 1: Fondamenta", "scarico": False, "perc_1rm": 0.75,  "serie_fond": 4, "reps_fond": "6-8", "rir": 2, "perc_trazioni": 0.60, "serie_traz": 5},
-        2:  {"blocco": "Blocco 1: Fondamenta", "scarico": False, "perc_1rm": 0.775, "serie_fond": 4, "reps_fond": "6",   "rir": 2, "perc_trazioni": 0.65, "serie_traz": 5},
-        3:  {"blocco": "Blocco 1: Fondamenta", "scarico": False, "perc_1rm": 0.80,  "serie_fond": 5, "reps_fond": "5-6", "rir": 1, "perc_trazioni": 0.70, "serie_traz": 5},
-        4:  {"blocco": "Blocco 1: Fondamenta (Scarico)", "scarico": True, "perc_1rm": 0.70, "serie_fond": 3, "reps_fond": "5", "rir": 3, "perc_trazioni": 0.50, "serie_traz": 3},
-        5:  {"blocco": "Blocco 2: Costruzione", "scarico": False, "perc_1rm": 0.825, "serie_fond": 5, "reps_fond": "5",   "rir": 1, "perc_trazioni": 0.70, "serie_traz": 6},
-        6:  {"blocco": "Blocco 2: Costruzione", "scarico": False, "perc_1rm": 0.85,  "serie_fond": 5, "reps_fond": "4-5", "rir": 1, "perc_trazioni": 0.75, "serie_traz": 6},
-        7:  {"blocco": "Blocco 2: Costruzione", "scarico": False, "perc_1rm": 0.875, "serie_fond": 5, "reps_fond": "4",   "rir": 1, "perc_trazioni": 0.80, "serie_traz": 6},
-        8:  {"blocco": "Blocco 2: Costruzione (Scarico)", "scarico": True, "perc_1rm": 0.725, "serie_fond": 3, "reps_fond": "4", "rir": 3, "perc_trazioni": 0.55, "serie_traz": 4},
-        9:  {"blocco": "Blocco 3: Picco",       "scarico": False, "perc_1rm": 0.875, "serie_fond": 5, "reps_fond": "3-4", "rir": 1, "perc_trazioni": 0.80, "serie_traz": 6},
-        10: {"blocco": "Blocco 3: Picco",       "scarico": False, "perc_1rm": 0.90,  "serie_fond": 5, "reps_fond": "3",   "rir": 1, "perc_trazioni": 0.85, "serie_traz": 6},
-        11: {"blocco": "Blocco 3: Picco",       "scarico": False, "perc_1rm": 0.925, "serie_fond": 5, "reps_fond": "2-3", "rir": 0, "perc_trazioni": 0.85, "serie_traz": 7},
-        12: {"blocco": "Blocco 3: Scarico e test finale", "scarico": True, "perc_1rm": 0.70, "serie_fond": 3, "reps_fond": "3", "rir": 3, "perc_trazioni": 0.50, "serie_traz": 3}
+        1:  {"blocco": "Blocco 1: Fondamenta", "scarico": False, "perc_1rm": 0.75,  "serie_fond": 4, "reps_fond": "6-8", "rir": 2, "perc_cal": 0.65, "serie_cal": 4},
+        2:  {"blocco": "Blocco 1: Fondamenta", "scarico": False, "perc_1rm": 0.775, "serie_fond": 4, "reps_fond": "6",   "rir": 2, "perc_cal": 0.70, "serie_cal": 4},
+        3:  {"blocco": "Blocco 1: Fondamenta", "scarico": False, "perc_1rm": 0.80,  "serie_fond": 5, "reps_fond": "5-6", "rir": 1, "perc_cal": 0.75, "serie_cal": 5},
+        4:  {"blocco": "Blocco 1: Fondamenta (Scarico)", "scarico": True, "perc_1rm": 0.70, "serie_fond": 3, "reps_fond": "5", "rir": 3, "perc_cal": 0.50, "serie_cal": 3},
+        5:  {"blocco": "Blocco 2: Costruzione", "scarico": False, "perc_1rm": 0.825, "serie_fond": 5, "reps_fond": "5",   "rir": 1, "perc_cal": 0.75, "serie_cal": 5},
+        6:  {"blocco": "Blocco 2: Costruzione", "scarico": False, "perc_1rm": 0.85,  "serie_fond": 5, "reps_fond": "4-5", "rir": 1, "perc_cal": 0.80, "serie_cal": 5},
+        7:  {"blocco": "Blocco 2: Costruzione", "scarico": False, "perc_1rm": 0.875, "serie_fond": 5, "reps_fond": "4",   "rir": 1, "perc_cal": 0.85, "serie_cal": 5},
+        8:  {"blocco": "Blocco 2: Costruzione (Scarico)", "scarico": True, "perc_1rm": 0.725, "serie_fond": 3, "reps_fond": "4", "rir": 3, "perc_cal": 0.55, "serie_cal": 3},
+        9:  {"blocco": "Blocco 3: Picco",       "scarico": False, "perc_1rm": 0.875, "serie_fond": 5, "reps_fond": "3-4", "rir": 1, "perc_cal": 0.85, "serie_cal": 6},
+        10: {"blocco": "Blocco 3: Picco",       "scarico": False, "perc_1rm": 0.90,  "serie_fond": 5, "reps_fond": "3",   "rir": 1, "perc_cal": 0.90, "serie_cal": 6},
+        11: {"blocco": "Blocco 3: Picco",       "scarico": False, "perc_1rm": 0.925, "serie_fond": 5, "reps_fond": "2-3", "rir": 0, "perc_cal": 0.90, "serie_cal": 6},
+        12: {"blocco": "Blocco 3: Scarico e test finale", "scarico": True, "perc_1rm": 0.70, "serie_fond": 3, "reps_fond": "3", "rir": 3, "perc_cal": 0.50, "serie_cal": 3}
     }
     
     param_sett = mappa_parametri_settimana[settimana_i90]
-    stato_ciclo_txt = "🟢 SCARICO (3:1)" if param_sett["scarico"] else f"🔥 SPINTA ({int(param_sett['perc_1rm']*100)}% 1RM)"
+    stato_ciclo_txt = "🟢 SCARICO (3:1)" if param_sett["scarico"] else f"🔥 SPINTA ({int(param_sett['perc_1rm']*100)}% massimale)"
     
-    # Arrotondamento matematico al disco da 2,5 kg
     def arrotonda_peso(valore):
         return round((valore * param_sett["perc_1rm"]) / 2.5) * 2.5
 
@@ -290,10 +290,12 @@ with st.sidebar:
     kg_squat_target = arrotonda_peso(float(bench_attuali["squat_1rm"]))
     kg_stacco_target = arrotonda_peso(float(bench_attuali["stacco_1rm"]))
     kg_military_target = arrotonda_peso(float(bench_attuali["military_1rm"]))
-    reps_trazioni_target = max(3, round(int(bench_attuali["trazioni_max"]) * param_sett["perc_trazioni"]))
+    kg_curl_target = round(float(bench_attuali["curl_kg"]) / 2.5) * 2.5
+    reps_trazioni_target = max(3, round(int(bench_attuali["trazioni_max"]) * param_sett["perc_cal"]))
+    reps_dip_target = max(5, round(int(bench_attuali["dip_max"]) * param_sett["perc_cal"]))
 
     st.info(
-        f"**Ciclo {ciclo_i90} — Settimana {settimana_i90}/12**\n\n"
+        f"**Ciclo {ciclo_i90} - Settimana {settimana_i90}/12**\n\n"
         f"**{param_sett['blocco']}**\n\n"
         f"Stato: {stato_ciclo_txt}\n\n"
         f"**Carichi di lavoro calcolati oggi:**\n"
@@ -301,20 +303,22 @@ with st.sidebar:
         f"- Squat: **{kg_squat_target} kg** ({param_sett['serie_fond']}x{param_sett['reps_fond']})\n"
         f"- Stacco: **{kg_stacco_target} kg** ({param_sett['serie_fond']}x{param_sett['reps_fond']})\n"
         f"- Military: **{kg_military_target} kg** ({param_sett['serie_fond']}x{param_sett['reps_fond']})\n"
-        f"- Trazioni libere: **{param_sett['serie_traz']}x{reps_trazioni_target} rip.**"
+        f"- Trazioni libere: **{param_sett['serie_cal']}x{reps_trazioni_target} rip.**\n"
+        f"- Dip parallele: **{param_sett['serie_cal']}x{reps_dip_target} rip.**\n"
+        f"- Curl bicipiti: **4x8-10 a {kg_curl_target} kg**"
     )
 
 # ==========================================
 # 5. INTESTAZIONE E SCHEDE DI NAVIGAZIONE
 # ==========================================
-st.title("🐺 Protocollo I90 — Sistema operativo ibrido")
+st.title("🐺 Protocollo I90 - Sistema operativo ibrido")
 st.markdown("*Forza progressiva. Resistenza aerobica. Disciplina binaria sulle 24 ore.*")
 st.markdown("---")
 
 tab_dashboard, tab_coach, tab_carichi, tab_mindset, tab_inserimento = st.tabs([
     "📊 Telemetria", 
     "⚔️ Allenamento I90", 
-    "📈 Massimali e cicli",
+    "📈 Massimali e calcolatore",
     "🧠 Le 4 regole", 
     "⚖️ Composizione corporea"
 ])
@@ -453,17 +457,17 @@ with tab_dashboard:
 # SCHEDA 2: ALLENAMENTO PROTOCOLLO I90 E REGISTRO DI CAMPO
 # ==========================================
 with tab_coach:
-    st.header(f"⚔️ Sessione giornaliera — Ciclo {ciclo_i90}, Settimana {settimana_i90}")
-    st.caption("Isolamento dell'interferenza: 3 sedute di forza e 3 di corsa a settimana. Trazioni rigorosamente a corpo libero.")
+    st.header(f"⚔️ Sessione giornaliera - Ciclo {ciclo_i90}, Settimana {settimana_i90}")
+    st.caption("Isolamento dell'interferenza: 3 sedute di forza e 3 di corsa a settimana. Trazioni e dip a corpo libero.")
     
     mappa_giorni_i90 = {
-        0: "1. Lunedì — Recupero attivo o Duathlon indoor (Bici + Corsa Z2)",
-        1: "2. Martedì — Forza parte superiore (Panca piana, Trazioni a corpo libero, Military press, Rematore)",
-        2: "3. Mercoledì — Corsa: Ripetute e soglia (Motore anaerobico e VO2 Max)",
-        3: "4. Giovedì — Forza parte inferiore (Squat, Stacco da terra, Unilaterali e Core)",
-        4: "5. Venerdì — Corsa: Easy Run in Zona 2 (Costruzione capillare e recupero)",
-        5: "6. Sabato — Condizionamento ibrido (Forza esplosiva + Circuito Metcon stile Hyrox)",
-        6: "7. Domenica — Corsa: Long Run progressivo (Resistenza aerobica strutturale)"
+        0: "1. Lunedì: Recupero attivo o Duathlon indoor (Bici + Corsa Z2)",
+        1: "2. Martedì: Forza parte superiore + Armatura braccia (Panca, Trazioni, Military, Rematore + Dip e Curl)",
+        2: "3. Mercoledì: Corsa ripetute e soglia (Motore anaerobico e VO2 Max)",
+        3: "4. Giovedì: Forza parte inferiore (Squat, Stacco da terra, Unilaterali e Core)",
+        4: "5. Venerdì: Corsa Easy Run in Zona 2 (Costruzione capillare e recupero)",
+        5: "6. Sabato: Condizionamento ibrido (Forza esplosiva + Circuito Metcon stile Hyrox)",
+        6: "7. Domenica: Corsa Long Run progressivo (Resistenza aerobica strutturale)"
     }
     
     giorno_odierno_idx = date.today().weekday()
@@ -507,16 +511,16 @@ with tab_coach:
                 
                 PARAMETRI MATEMATICI DEL CICLO ATTUALE (CALCOLATI DAL SISTEMA, NON MODIFICARLI):
                 - Ciclo: {ciclo_i90} | Settimana: {settimana_i90} su 12 ({param_sett['blocco']})
-                - Stato: {stato_ciclo_txt} | Percentuale carico sui fondamentali: {int(param_sett['perc_1rm']*100)}% 1RM
-                - Serie e ripetizioni prescritte oggi sui fondamentali con bilanciere: {param_sett['serie_fond']} serie da {param_sett['reps_fond']} ripetizioni (RIR {param_sett['rir']})
+                - Stato: {stato_ciclo_txt} | Percentuale carico sui fondamentali: {int(param_sett['perc_1rm']*100)}% del massimale
+                - Serie e ripetizioni prescritte oggi sui fondamentali con bilanciere: {param_sett['serie_fond']} serie da {param_sett['reps_fond']} ripetizioni (margine RIR {param_sett['rir']})
                 - Carichi ESATTI da prescrivere oggi:
                   * Panca piana bilanciere: {kg_panca_target} kg (su massimale di {bench_attuali['panca_1rm']} kg)
                   * Military press bilanciere: {kg_military_target} kg (su massimale di {bench_attuali['military_1rm']} kg)
                   * Squat bilanciere: {kg_squat_target} kg (su massimale di {bench_attuali['squat_1rm']} kg)
                   * Stacco da terra: {kg_stacco_target} kg (su massimale di {bench_attuali['stacco_1rm']} kg)
-                - TRAZIONI ALLA SBARRA (RIGOROSAMENTE A CORPO LIBERO, VIETATO USARE ZAVORRA):
-                  * Massimale attuale a corpo libero: {bench_attuali['trazioni_max']} ripetizioni consecutive.
-                  * Volume prescritto oggi: {param_sett['serie_traz']} serie da {reps_trazioni_target} ripetizioni a corpo libero con controllo eccentrico (3 secondi in discesa, 1 secondo fermo al mento).
+                  * Trazioni alla sbarra (RIGOROSAMENTE A CORPO LIBERO, zero zavorra): {param_sett['serie_cal']} serie da {reps_trazioni_target} ripetizioni controllate (su massimale di {bench_attuali['trazioni_max']} rip.)
+                  * Piegamenti alle parallele - Dip (A CORPO LIBERO): {param_sett['serie_cal']} serie da {reps_dip_target} ripetizioni (su massimale di {bench_attuali['dip_max']} rip.)
+                  * Curl bicipiti con bilanciere o manubri: 4 serie da 8-10 ripetizioni con {kg_curl_target} kg
                 - Passo di riferimento sui 5 km per la corsa: {bench_attuali['passo_5k']} min/km.
                 - Telemetria: Body Battery {bb_attuale_energia}%, FC riposo {rhr_attuale} bpm, DOMS {doms_level}/10.
                 - Ultime schede pesi registrate dall'atleta: {ultimi_log_pesi}
@@ -525,14 +529,16 @@ with tab_coach:
                 {modulo_scelto}
                 
                 REGOLE DI GENERAZIONE PER IL MODULO SCELTO:
-                1. Se è MARTEDÌ (Forza parte superiore):
-                   - Prescrivi Panca piana ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_panca_target} kg, rec. 120s), Trazioni alla sbarra a corpo libero ({param_sett['serie_traz']}x{reps_trazioni_target} rip. controllate, rec. 90-120s), Military press ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_military_target} kg, rec. 120s) e Rematore pesante.
-                   - Chiudi con 2 super serie complementari per braccia e deltoidi laterali/posteriori per garantire densità in 55 minuti senza bruciare il sistema nervoso per le ripetute di domani.
+                1. Se è MARTEDÌ (Forza parte superiore + Armatura braccia):
+                   - Fase 1 (Fondamentali di forza): Panca piana ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_panca_target} kg, rec. 120s), Trazioni alla sbarra a corpo libero ({param_sett['serie_cal']}x{reps_trazioni_target} rip. con discesa di 3 secondi, rec. 90-120s), Military press ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_military_target} kg, rec. 120s) e Rematore pesante con bilanciere o manubrio (4x8).
+                   - Fase 2 (Blocco obbligatorio Armatura Braccia - Bicipiti e Tricipiti):
+                     * Super serie 1 (Forza braccia): **Piegamenti alle parallele (Dip)** ({param_sett['serie_cal']} serie da {reps_dip_target} ripetizioni) + **Curl con bilanciere (o due manubri)** (4 serie da 8-10 ripetizioni con {kg_curl_target} kg). Recupero 75 secondi a fine super serie.
+                     * Super serie 2 (Ipertrofia e pompaggio denso): **Curl a martello con manubri** (3x12) + **Estensioni tricipiti sopra la testa o ai cavi** (3x12-15) + **Alzate laterali per deltoidi** (3x15). Zero pausa tra gli esercizi, 60 secondi a fine giro.
                 2. Se è GIOVEDÌ (Forza parte inferiore):
-                   - Prescrivi Squat ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_squat_target} kg, rec. 120-150s) e Stacco ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_stacco_target} kg), seguiti da Affondi bulgari o pressa e 2 esercizi di Core anti-rotazionale (Plank, Ab-wheel, Pallof press).
+                   - Prescrivi Squat ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_squat_target} kg, rec. 120-150s) e Stacco ({param_sett['serie_fond']}x{param_sett['reps_fond']} a {kg_stacco_target} kg), seguiti da Affondi bulgari o pressa (4x8 per gamba), Leg curl per femorali (4x10) e 2 esercizi di Core anti-rotazionale (Plank, Ab-wheel, Pallof press).
                 3. Se è SABATO (Condizionamento ibrido):
-                   - Fase 1 (20 min): lavoro tecnico/potenza con manubri o bilanciere (es. Clean & Press o Thruster).
-                   - Fase 2 (25-30 min): Circuito Metcon in stile Hyrox/CrossFit (con corsa, burpees, trazioni a corpo libero, affondi con manubri, devil press).
+                   - Fase 1 (20 min): lavoro tecnico e di potenza con manubri o bilanciere (es. Clean & Press o Thruster) + richiamo rapido di trazioni e dip.
+                   - Fase 2 (25-30 min): Circuito Metcon in stile Hyrox/CrossFit (con corsa, burpees, trazioni a corpo libero, affondi in camminata con manubri, devil press, trasporto carichi).
                 4. Se è MERCOLEDÌ (Ripetute), VENERDÌ (Zona 2) o DOMENICA (Long Run):
                    - Calcola i ritmi esatti al km partendo dal suo passo sui 5 km ({bench_attuali['passo_5k']}/km). Vietato inserire esercizi di palestra.
 
@@ -557,27 +563,29 @@ with tab_coach:
     st.markdown("---")
     st.subheader("📝 Registra i carichi sollevati oggi (Diario dell'atleta)")
     with st.form("form_log_allenamento"):
-        col_l1, col_l2, col_l3 = st.columns(3)
+        col_l1, col_l2, col_l3, col_l4 = st.columns(4)
         with col_l1:
-            log_panca_kg = st.number_input("Panca piana — Carico usato (kg)", value=float(kg_panca_target), step=2.5)
-            log_panca_reps = st.number_input("Panca piana — Ripetizioni medie per serie", value=6, step=1)
+            log_panca_kg = st.number_input("Panca piana (kg)", value=float(kg_panca_target), step=2.5)
+            log_military_kg = st.number_input("Military press (kg)", value=float(kg_military_target), step=2.5)
         with col_l2:
-            log_trazioni_reps = st.number_input("Trazioni a corpo libero — Ripetizioni totali chiuse oggi", value=int(param_sett['serie_traz'] * reps_trazioni_target), step=1)
-            log_military_kg = st.number_input("Military press — Carico usato (kg)", value=float(kg_military_target), step=2.5)
+            log_trazioni_reps = st.number_input("Trazioni totali chiuse", value=int(param_sett['serie_cal'] * reps_trazioni_target), step=1)
+            log_dip_reps = st.number_input("Dip parallele totali chiusi", value=int(param_sett['serie_cal'] * reps_dip_target), step=1)
         with col_l3:
-            log_squat_kg = st.number_input("Squat — Carico usato (kg)", value=float(kg_squat_target), step=2.5)
-            log_stacco_kg = st.number_input("Stacco — Carico usato (kg)", value=float(kg_stacco_target), step=2.5)
-            
-        note_sessione = st.text_input("Sensazioni, tempi Metcon o note tecniche della seduta:")
+            log_curl_kg = st.number_input("Curl bicipiti (kg)", value=float(kg_curl_target), step=1.0)
+            log_squat_kg = st.number_input("Squat (kg)", value=float(kg_squat_target), step=2.5)
+        with col_l4:
+            log_stacco_kg = st.number_input("Stacco da terra (kg)", value=float(kg_stacco_target), step=2.5)
+            note_sessione = st.text_input("Sensazioni o tempi circuito:")
         
         if st.form_submit_button("SALVA REGISTRO SEDUTA SU SUPABASE", type="primary", use_container_width=True):
             payload_log = {
                 "ciclo": ciclo_i90,
                 "settimana": settimana_i90,
-                "modulo": modulo_scelto.split("—")[1].strip() if "—" in modulo_scelto else modulo_scelto,
+                "modulo": modulo_scelto.split(":")[1].strip() if ":" in modulo_scelto else modulo_scelto,
                 "panca_kg": log_panca_kg,
-                "panca_reps": log_panca_reps,
                 "trazioni_reps_totali": log_trazioni_reps,
+                "dip_reps_totali": log_dip_reps,
+                "curl_kg": log_curl_kg,
                 "military_kg": log_military_kg,
                 "squat_kg": log_squat_kg,
                 "stacco_kg": log_stacco_kg,
@@ -592,24 +600,66 @@ with tab_coach:
                 st.error(f"Errore salvataggio log: {e}")
 
 # ==========================================
-# SCHEDA 3: MASSIMALI E CONFRONTO CICLI DI 12 SETTIMANE
+# SCHEDA 3: MASSIMALI, CALCOLATORE DI SICUREZZA E CICLI
 # ==========================================
 with tab_carichi:
-    st.header("📈 Gestione massimali e confronto tra cicli di 12 settimane")
-    st.write("Aggiorna i tuoi massimali a inizio ciclo o durante la Settimana 12 (Test finale) per calcolare i carichi e misurare i progressi tra una stagione e l'altra.")
+    st.header("📈 Calcolatore indiretto in sicurezza e gestione massimali")
     
+    # --- NUOVO CALCOLATORE SUBMASSIMALE DI BRZYCKI ---
+    with st.expander("🛡️ NON CONOSCI I TUOI MASSIMALI? Calcolali qui senza rischiare sotto i pesi (Metodo di Brzycki)", expanded=True):
+        st.markdown(
+            "**Come eseguire il test in palestra senza rischi:** carica un peso che riesci a muovere con tecnica perfetta per **5-8 ripetizioni**, "
+            "fermandoti quando senti di avere ancora 1 ripetizione di margine. Inserisci qui sotto il peso usato e le ripetizioni totali (incluse quelle di margine): "
+            "il sistema calcolerà il tuo massimale teorico su 1 ripetizione e lo copierà automaticamente nella scheda sotto."
+        )
+        cc1, cc2, cc3, cc4 = st.columns(4)
+        with cc1:
+            st.markdown("**1. Panca piana**")
+            t_panca_kg = st.number_input("Peso usato su panca (kg)", value=65.0, step=2.5, key="tp_kg")
+            t_panca_r = st.number_input("Ripetizioni valide (panca)", min_value=2, max_value=12, value=6, step=1, key="tp_r")
+            stima_panca = round((t_panca_kg / (1.0278 - 0.0278 * t_panca_r)) / 2.5) * 2.5
+            st.caption(f"Massimale stimato: **{stima_panca} kg**")
+        with cc2:
+            st.markdown("**2. Squat bilanciere**")
+            t_squat_kg = st.number_input("Peso usato su squat (kg)", value=80.0, step=2.5, key="tsq_kg")
+            t_squat_r = st.number_input("Ripetizioni valide (squat)", min_value=2, max_value=12, value=6, step=1, key="tsq_r")
+            stima_squat = round((t_squat_kg / (1.0278 - 0.0278 * t_squat_r)) / 2.5) * 2.5
+            st.caption(f"Massimale stimato: **{stima_squat} kg**")
+        with cc3:
+            st.markdown("**3. Stacco da terra**")
+            t_stacco_kg = st.number_input("Peso usato su stacco (kg)", value=95.0, step=2.5, key="tst_kg")
+            t_stacco_r = st.number_input("Ripetizioni valide (stacco)", min_value=2, max_value=12, value=6, step=1, key="tst_r")
+            stima_stacco = round((t_stacco_kg / (1.0278 - 0.0278 * t_stacco_r)) / 2.5) * 2.5
+            st.caption(f"Massimale stimato: **{stima_stacco} kg**")
+        with cc4:
+            st.markdown("**4. Military press**")
+            t_mil_kg = st.number_input("Peso usato su military (kg)", value=40.0, step=2.5, key="tm_kg")
+            t_mil_r = st.number_input("Ripetizioni valide (military)", min_value=2, max_value=12, value=6, step=1, key="tm_r")
+            stima_mil = round((t_mil_kg / (1.0278 - 0.0278 * t_mil_r)) / 2.5) * 2.5
+            st.caption(f"Massimale stimato: **{stima_mil} kg**")
+
+        if st.button("⬇️ COPIA QUESTE STIME NEI CAMPI UFFICIALI QUI SOTTO", use_container_width=True):
+            st.session_state["input_panca_1rm"] = float(stima_panca)
+            st.session_state["input_squat_1rm"] = float(stima_squat)
+            st.session_state["input_stacco_1rm"] = float(stima_stacco)
+            st.session_state["input_military_1rm"] = float(stima_mil)
+            st.success("Valori copiati! Premi 'AGGIORNA MASSIMALI E SALVA NEL CICLO' qui sotto per renderli attivi.")
+
     with st.form("form_benchmarks"):
-        st.subheader(f"Imposta parametri di riferimento — Ciclo {ciclo_i90}, Settimana {settimana_i90}")
-        cb1, cb2, cb3 = st.columns(3)
+        st.subheader(f"Parametri ufficiali di riferimento - Ciclo {ciclo_i90}, Settimana {settimana_i90}")
+        cb1, cb2, cb3, cb4 = st.columns(4)
         with cb1:
-            b_panca = st.number_input("Panca piana — 1RM (kg)", value=float(bench_attuali["panca_1rm"]), step=2.5)
-            b_military = st.number_input("Military press — 1RM (kg)", value=float(bench_attuali["military_1rm"]), step=2.5)
+            b_panca = st.number_input("Panca piana - Massimale (kg)", value=float(st.session_state["input_panca_1rm"]), step=2.5)
+            b_military = st.number_input("Military press - Massimale (kg)", value=float(st.session_state["input_military_1rm"]), step=2.5)
         with cb2:
-            b_squat = st.number_input("Squat con bilanciere — 1RM (kg)", value=float(bench_attuali["squat_1rm"]), step=2.5)
-            b_stacco = st.number_input("Stacco da terra — 1RM (kg)", value=float(bench_attuali["stacco_1rm"]), step=2.5)
+            b_squat = st.number_input("Squat - Massimale (kg)", value=float(st.session_state["input_squat_1rm"]), step=2.5)
+            b_stacco = st.number_input("Stacco - Massimale (kg)", value=float(st.session_state["input_stacco_1rm"]), step=2.5)
         with cb3:
-            b_trazioni = st.number_input("Trazioni a corpo libero — Max ripetizioni consecutive", value=int(bench_attuali["trazioni_max"]), step=1)
-            b_passo5k = st.text_input("Corsa 5 km — Passo medio (MM:SS)", value=str(bench_attuali["passo_5k"]))
+            b_trazioni = st.number_input("Trazioni libere - Ripetizioni max", value=int(st.session_state["input_trazioni_max"]), step=1)
+            b_dip = st.number_input("Dip parallele liberi - Ripetizioni max", value=int(st.session_state["input_dip_max"]), step=1)
+        with cb4:
+            b_curl = st.number_input("Curl bicipiti - Carico per 8-10 rip. (kg)", value=float(st.session_state["input_curl_kg"]), step=1.0)
+            b_passo5k = st.text_input("Corsa 5 km - Passo medio (MM:SS)", value=str(st.session_state["input_passo_5k"]))
             
         if st.form_submit_button("AGGIORNA MASSIMALI E SALVA NEL CICLO", type="primary", use_container_width=True):
             payload_b = {
@@ -620,12 +670,14 @@ with tab_carichi:
                 "squat_1rm": b_squat,
                 "stacco_1rm": b_stacco,
                 "trazioni_max": b_trazioni,
+                "dip_max": b_dip,
+                "curl_kg": b_curl,
                 "passo_5k": b_passo5k
             }
             try:
                 salva_dato_i90_giornaliero("i90_benchmarks", payload_b)
                 st.cache_data.clear()
-                st.success("✅ Massimali aggiornati! Tutti i calcoli nella barra laterale sono stati ricalibrati.")
+                st.success("✅ Massimali salvati! Tutti i carichi nella barra laterale sono stati ricalibrati.")
                 st.rerun()
             except Exception as e:
                 st.error(f"Errore salvataggio massimali: {e}")
@@ -641,36 +693,28 @@ with tab_carichi:
         with col_g1:
             fig_forza = px.bar(
                 df_b_view, x="Etichetta", y=["panca_1rm", "squat_1rm", "stacco_1rm", "military_1rm"],
-                barmode="group", title="Evoluzione massimali di forza (kg) tra i cicli",
+                barmode="group", title="Evoluzione massimali con bilanciere (kg)",
                 labels={"value": "Chilogrammi (kg)", "variable": "Fondamentale"}
             )
             st.plotly_chart(fig_forza, use_container_width=True)
         with col_g2:
-            fig_traz = px.line(
-                df_b_view, x="Etichetta", y="trazioni_max", markers=True,
-                title="Evoluzione trazioni consecutive a corpo libero",
-                labels={"trazioni_max": "Ripetizioni massime"}
+            cols_cal = [c for c in ["trazioni_max", "dip_max"] if c in df_b_view.columns]
+            fig_cal = px.line(
+                df_b_view, x="Etichetta", y=cols_cal, markers=True,
+                title="Evoluzione trazioni e dip a corpo libero",
+                labels={"value": "Ripetizioni massime", "variable": "Esercizio"}
             )
-            st.plotly_chart(fig_traz, use_container_width=True)
+            st.plotly_chart(fig_cal, use_container_width=True)
             
-        st.dataframe(df_b_view[["data", "ciclo", "settimana", "panca_1rm", "squat_1rm", "stacco_1rm", "military_1rm", "trazioni_max", "passo_5k"]], use_container_width=True)
+        st.dataframe(df_b_view, use_container_width=True)
     else:
-        st.info("Salva i tuoi massimali qui sopra per iniziare a tracciare l'evoluzione tra le settimane e i cicli.")
-
-    st.markdown("---")
-    st.subheader("📚 Storico allenamenti di forza registrati")
-    if not df_workout_logs.empty:
-        df_w_view = df_workout_logs.copy()
-        df_w_view["data"] = pd.to_datetime(df_w_view["data"]).dt.strftime("%d/%m/%Y")
-        st.dataframe(df_w_view[["data", "ciclo", "settimana", "modulo", "panca_kg", "trazioni_reps_totali", "military_kg", "squat_kg", "stacco_kg", "note"]], use_container_width=True)
-    else:
-        st.info("Nessuna seduta di sala pesi ancora registrata nel diario.")
+        st.info("Usa il calcolatore qui sopra e salva i tuoi parametri per iniziare a tracciare l'evoluzione.")
 
 # ==========================================
 # SCHEDA 4: LO STILE DI VITA (LE 4 REGOLE ON/OFF)
 # ==========================================
 with tab_mindset:
-    st.header("🧠 Le 4 regole quotidiane — Legge binaria: fatto o non fatto")
+    st.header("🧠 Le 4 regole quotidiane - Legge binaria: fatto o non fatto")
     st.write("Ogni regola è un interruttore: **ON** o **OFF**. Niente 'fatto a metà'.")
     
     oggi_str = date.today().isoformat()
@@ -743,7 +787,7 @@ with tab_inserimento:
             massa_ossea = st.number_input("Massa ossea (kg)", value=3.0, step=0.1)
             bmr = st.number_input("Metabolismo basale (kcal)", value=1800, step=1)
             
-        if st.form_submit_button("SALVA DATI SU DATABASE", type="primary"):
+        if st.form_submit_button("SALVA DATI SU DATABASE", type="primary", use_container_width=True):
             payload_zepp = {
                 "data": date.today().isoformat(), "peso_kg": peso, "acqua_perc": acqua,
                 "grasso_sottocutaneo_perc": grasso_sottocutaneo, "grasso_viscerale": grasso_viscerale,
